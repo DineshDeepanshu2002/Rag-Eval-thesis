@@ -1,0 +1,17 @@
+# secrets — never commit
+.env
+
+# virtual environment
+.venv/
+
+# downloaded datasets (6GB+ — download via scripts/download_datasets.py)
+datasets/
+
+# generation cache (LLM API responses — reproducible from code)
+results/gen_cache/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store

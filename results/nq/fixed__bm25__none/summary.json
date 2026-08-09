@@ -1,0 +1,19 @@
+{
+  "dataset": "nq",
+  "config_id": "fixed__bm25__none",
+  "chunking": "fixed",
+  "retrieval": "bm25",
+  "rerank": "none",
+  "ir_P@1": 0.558,
+  "ir_P@3": 0.2706666666666666,
+  "ir_P@5": 0.1748,
+  "ir_P@10": 0.095,
+  "ir_MRR": 0.6544400101714755,
+  "ir_nDCG@10": 0.6805360345310751,
+  "ragas_faithfulness": 0.6254333333333333,
+  "ragas_answer_relevancy": 0.4352284627380369,
+  "ragas_context_relevancy": 0.10459999999007999,
+  "ares_composite": 0.7886666666666667,
+  "mean_latency_ms": 877.4303291731048,
+  "cost_eur_per_1k": 0.12199006800000001
+}

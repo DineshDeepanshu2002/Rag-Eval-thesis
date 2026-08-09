@@ -1,0 +1,19 @@
+{
+  "dataset": "nq",
+  "config_id": "semantic__dense__none",
+  "chunking": "semantic",
+  "retrieval": "dense",
+  "rerank": "none",
+  "ir_P@1": 0.832,
+  "ir_P@3": 0.364,
+  "ir_P@5": 0.22720000000000004,
+  "ir_P@10": 0.11740000000000002,
+  "ir_MRR": 0.887332424621449,
+  "ir_nDCG@10": 0.9064779899237764,
+  "ragas_faithfulness": 0.6003333333333334,
+  "ragas_answer_relevancy": 0.4276679743165372,
+  "ragas_context_relevancy": 0.11671111110052074,
+  "ares_composite": 0.8113333333333334,
+  "mean_latency_ms": 959.8487574188039,
+  "cost_eur_per_1k": 0.059130791999999995
+}

@@ -1,0 +1,19 @@
+{
+  "dataset": "msmarco",
+  "config_id": "semantic__dense__cross_encoder",
+  "chunking": "semantic",
+  "retrieval": "dense",
+  "rerank": "cross_encoder",
+  "ir_P@1": 0.86,
+  "ir_P@3": 0.32733333333333325,
+  "ir_P@5": 0.202,
+  "ir_P@10": 0.1024,
+  "ir_MRR": 0.9046012472062395,
+  "ir_nDCG@10": 0.9196993994954448,
+  "ragas_faithfulness": 0.6334391774891773,
+  "ragas_answer_relevancy": 0.5031640909055817,
+  "ragas_context_relevancy": 0.1168166666557725,
+  "ares_composite": 0.8453333333333334,
+  "mean_latency_ms": 775.016349166166,
+  "cost_eur_per_1k": 0.04807092
+}

@@ -1,0 +1,19 @@
+{
+  "dataset": "nq",
+  "config_id": "semantic__hybrid__cross_encoder",
+  "chunking": "semantic",
+  "retrieval": "hybrid",
+  "rerank": "cross_encoder",
+  "ir_P@1": 0.808,
+  "ir_P@3": 0.37066666666666664,
+  "ir_P@5": 0.23120000000000002,
+  "ir_P@10": 0.1174,
+  "ir_MRR": 0.8816786435786436,
+  "ir_nDCG@10": 0.9043277755127421,
+  "ragas_faithfulness": 0.5716142857142857,
+  "ragas_answer_relevancy": 0.4214930051778053,
+  "ragas_context_relevancy": 0.13016666665462726,
+  "ares_composite": 0.7953333333333333,
+  "mean_latency_ms": 863.7492247396149,
+  "cost_eur_per_1k": 0.06272238
+}

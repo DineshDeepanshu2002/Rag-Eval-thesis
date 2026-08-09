@@ -1,0 +1,19 @@
+{
+  "dataset": "nq",
+  "config_id": "semantic__dense__cross_encoder",
+  "chunking": "semantic",
+  "retrieval": "dense",
+  "rerank": "cross_encoder",
+  "ir_P@1": 0.806,
+  "ir_P@3": 0.36999999999999994,
+  "ir_P@5": 0.2308,
+  "ir_P@10": 0.1174,
+  "ir_MRR": 0.8793080086580086,
+  "ir_nDCG@10": 0.9028665112378694,
+  "ragas_faithfulness": 0.5609833333333334,
+  "ragas_answer_relevancy": 0.41561907305596935,
+  "ragas_context_relevancy": 0.11558333332231249,
+  "ares_composite": 0.7953333333333333,
+  "mean_latency_ms": 827.5016423568595,
+  "cost_eur_per_1k": 0.060222371999999996
+}

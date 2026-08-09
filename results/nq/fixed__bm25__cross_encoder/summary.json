@@ -1,0 +1,19 @@
+{
+  "dataset": "nq",
+  "config_id": "fixed__bm25__cross_encoder",
+  "chunking": "fixed",
+  "retrieval": "bm25",
+  "rerank": "cross_encoder",
+  "ir_P@1": 0.812,
+  "ir_P@3": 0.34,
+  "ir_P@5": 0.20600000000000002,
+  "ir_P@10": 0.10460000000000001,
+  "ir_MRR": 0.8466936507936508,
+  "ir_nDCG@10": 0.8489332829238831,
+  "ragas_faithfulness": 0.6734006493506494,
+  "ragas_answer_relevancy": 0.48938310355412157,
+  "ragas_context_relevancy": 0.130433333320835,
+  "ares_composite": 0.8386666666666667,
+  "mean_latency_ms": 862.7300883550197,
+  "cost_eur_per_1k": 0.117971508
+}
