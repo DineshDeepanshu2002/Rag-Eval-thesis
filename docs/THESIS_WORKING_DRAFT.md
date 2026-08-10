@@ -57,17 +57,24 @@ framework agreement, Spearman correlation, MS MARCO, Natural Questions, BEIR*
 ---
 
 ## 1. INTRODUCTION
-[SCAFFOLD — write this after Chapter 2 and 4 are solidified]
 
-Structure to cover:
-- Opening: why RAG matters in production AI systems (grounding, attribution, reducing hallucination)
-- The evaluation problem: as RAG moves to production, reliable evaluation becomes critical
-- The specific gap: multiple frameworks exist but have never been systematically compared
-- What this dissertation does: bridges that gap empirically
-- Overview of structure: chapter by chapter map
+Large language models have become capable of generating fluent, authoritative-sounding text on almost any topic. This capability comes with a well-documented problem: models hallucinate — they produce confident statements that are factually incorrect, with no reliable mechanism to distinguish them from accurate ones (Lewis et al., 2020). For applications in healthcare, legal research, customer support, and enterprise knowledge management, this unreliability is not merely inconvenient; it undermines trust in the entire system.
 
-Note: Introduction is distinct from Chapter 2 (Research Gap). Introduction situates the
-problem broadly; Chapter 2 provides the precise academic gap with citations.
+Retrieval-Augmented Generation (RAG) was proposed as a practical solution to this problem. Rather than relying solely on knowledge embedded in model weights during training, a RAG system retrieves relevant documents from an external knowledge base at inference time and conditions the language model's response on that retrieved context (Lewis et al., 2020). This architecture offers two concrete benefits: it grounds responses in verifiable sources, and it makes the system's knowledge updatable without retraining. As a result, RAG has become one of the most widely adopted patterns in production AI deployments, appearing in enterprise search tools, question-answering assistants, and document-grounded chatbots.
+
+As RAG systems have moved from research prototypes into production environments, a new engineering challenge has emerged: how do you know whether your RAG system is actually working well? Manual evaluation — having humans read retrieved passages and generated answers to judge quality — is expensive, slow, and does not scale to the thousands or millions of queries that production systems handle. Automated evaluation is therefore not optional; it is a prerequisite for iterative development, regression testing, and deployment decisions.
+
+Three families of automated evaluation frameworks have emerged to address this need. Traditional information retrieval (IR) metrics — Precision@k, Mean Reciprocal Rank (MRR), and Normalised Discounted Cumulative Gain (nDCG) — measure the quality of the retrieval stage by comparing retrieved documents against relevance judgements (Thakur et al., 2021). RAGAS (Es et al., 2024) uses an LLM-as-judge approach to assess end-to-end generation quality across dimensions including faithfulness and answer relevancy, without requiring human-labelled reference answers. ARES (Saad-Falcon et al., 2024) similarly employs a zero-shot LLM judge but adds a statistical calibration mechanism — Prediction-Powered Inference (PPI) — designed to correct for LLM scoring bias when a small number of human annotations are available.
+
+Each of these frameworks has been validated in its own published work, and each measures something genuinely useful. However, a fundamental question remains unanswered: do these frameworks agree with each other? When you rank twelve RAG configurations by IR metrics, does that ranking match the ranking produced by RAGAS, or by ARES? If the frameworks disagree, which one should a practitioner trust? And are the rankings stable across different datasets, or does the choice of test corpus materially affect which configuration appears best?
+
+These questions matter because the answer determines how practitioners should design their evaluation pipelines. If all three frameworks agree closely, a team can choose whichever is cheapest or most convenient. If they disagree, the choice of framework becomes a substantive design decision — one that could lead different teams to different conclusions about which RAG configuration to deploy.
+
+No published study has yet conducted a systematic empirical comparison of these three framework families on the same RAG configurations under identical experimental conditions. This dissertation directly addresses that gap.
+
+The study evaluates twelve RAG configurations — formed by crossing two chunking strategies (fixed-size and semantic), three retrieval methods (BM25, dense, and hybrid), and two reranking options (none and cross-encoder) — on two BEIR-formatted benchmark datasets: MS MARCO and Natural Questions. Each configuration is evaluated using all three framework families across 500 queries per dataset, producing 24 evaluation runs in total. Inter-framework agreement is quantified using Spearman rank correlation with 10,000-iteration bootstrap confidence intervals. The relative contribution of each pipeline variable to observed performance differences is assessed using Wilcoxon signed-rank tests with Holm–Bonferroni correction for multiple comparisons. Cross-dataset stability of configuration rankings is examined by computing Spearman correlations between the MS MARCO and NQ ranking orders for each framework.
+
+The dissertation is structured as follows. Chapter 2 reviews the research gap in detail, situating this work within the existing literature on RAG evaluation. Chapter 3 establishes the research questions and sub-questions that organise the empirical investigation. Chapter 4 reviews relevant prior work on RAG architectures, evaluation frameworks, and benchmark datasets. Chapter 5 describes the experimental methodology, including dataset preparation, pipeline implementation, evaluation framework configuration, and statistical analysis procedures. Chapter 6 presents the results across all three research sub-questions. Chapter 7 discusses the implications of these findings for both researchers and practitioners. Chapter 8 concludes the dissertation with a summary of contributions, limitations, and directions for future work.
 
 ---
 
@@ -307,8 +314,6 @@ have not been empirically compared. This dissertation directly addresses both ob
 
 ### 4.6 The Identified Gap
 
-[DRAFT + NEW — combine both framings]
-
 The literature reviewed above contains multiple, internally validated evaluation frameworks
 for RAG systems. Crucially, as Gan et al. (2025) and Brown et al. (2025) confirm, no study
 has yet conducted a systematic empirical comparison of these frameworks against one another
@@ -447,27 +452,31 @@ reported alongside all correlation estimates.
 ### 5.6 Reproducibility
 
 All LLM model versions are pinned. All random seeds are fixed (seed=42 throughout). All
-prompts, configurations, and analysis code are version-controlled in Git. Experiment runs
-are logged using Weights and Biases (project: rag-eval-thesis). The complete codebase and
-analysis notebooks will be published to a public GitHub repository.
+prompts, configurations, and analysis code are version-controlled in Git. The complete
+codebase and results are published to a public GitHub repository
+(github.com/DineshDeepanshu2002/Rag-Eval-thesis). Weights and Biases logging was planned
+but not implemented in the final pipeline; experiment state is instead captured through
+per-run summary.json files and the tidy_config_scores.csv aggregate.
 
-Software versions [TO BE COMPLETED after pinning post-install]:
-  - Python: 3.14.x
-  - ragas: [pin version]
-  - openai: [pin version]
-  - sentence-transformers: [pin version]
-  - datasets / beir: [pin version]
-  - langchain-openai: [pin version]
-  - scipy / numpy / pandas: [pin versions]
+Software versions (pinned at time of experiment):
+  - Python: 3.14
+  - ragas: 0.4.3
+  - openai: 2.52.0
+  - sentence-transformers: 5.6.1
+  - datasets: 5.0.1
+  - beir: 2.2.0
+  - langchain-openai: 1.4.1
+  - scipy: 1.18.0
+  - numpy: 2.5.1
+  - pandas: 3.0.5
 
 ### 5.7 Ethical Considerations
 
 The research uses only publicly available datasets containing anonymised, non-personal data.
-No human participants are involved beyond the author's own annotation of ~200 calibration
-examples per dataset (single-rater; see threats to validity). An Ethical Approval Form will
-be submitted to the supervisor under the secondary-data category (Gisma Module Handbook §5).
-
-[TODO: Record submission date here once submitted — target: end of July 2026]
+No human participants are involved. The Ethical Approval Form has been discussed with the
+supervisor under the secondary-data category (Gisma Module Handbook §5). All API calls were
+made to OpenAI's commercial endpoint under standard terms of service; no private or
+personally identifiable data was processed.
 
 ### 5.8 Threats to Validity
 
@@ -1007,16 +1016,15 @@ Structure to include:
 
 ## REFERENCES
 
-[DRAFT — from your PDF, INCOMPLETE. Missing entries marked with *]
-
 Angelopoulos, A. N., Bates, S., Candès, E. J., Jordan, M. I. and Lei, L. (2023)
 'Prediction-Powered Inference', *Science*, 382(6671), pp. 669–674.
 
 Bajaj, P., et al. (2016) 'MS MARCO: A Human Generated MAchine Reading COmprehension
 Dataset', *arXiv preprint* arXiv:1611.09268.
 
-Brown, [first initial], Roman, [first initial] and Devereux, [first initial] (2025)
-'[VERIFY FULL TITLE]', *arXiv preprint* arXiv:2508.06401.
+Brown, A., Roman, M. and Devereux, B. (2025)
+'A Systematic Literature Review of Retrieval-Augmented Generation: Techniques, Metrics, and Challenges',
+*arXiv preprint* arXiv:2508.06401.
 
 Cormack, G. V., Clarke, C. L. and Buettcher, S. (2009) 'Reciprocal rank fusion outperforms
 condorcet and individual rank learning methods', *Proceedings of the 32nd International ACM
@@ -1025,7 +1033,9 @@ SIGIR Conference*, pp. 758–759.
 Es, S., James, J., Espinosa-Anke, L. and Schockaert, S. (2024) 'RAGAS: Automated Evaluation
 of Retrieval Augmented Generation', *Proceedings of EACL 2024*.
 
-Gan, [first initial], et al. (2025) '[VERIFY FULL TITLE]', *arXiv preprint* arXiv:2504.14891.
+Gan, A., Yu, H., Zhang, K., Liu, Q., Yan, W., Huang, Z., Tong, S. and Hu, G. (2025)
+'Retrieval Augmented Generation Evaluation in the Era of Large Language Models: A Comprehensive Survey',
+*arXiv preprint* arXiv:2504.14891.
 
 Gao, Y., et al. (2023) 'Retrieval-Augmented Generation for Large Language Models: A Survey',
 *arXiv preprint* arXiv:2312.10997.
@@ -1061,7 +1071,9 @@ Thakur, N., Reimers, N., Rücklé, A., Srivastava, A. and Gurevych, I. (2021) 'B
 Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models',
 *Proceedings of NeurIPS 2021 Datasets and Benchmarks Track*.
 
-[Auepora survey authors] (2024) '[VERIFY FULL TITLE]', *arXiv preprint* arXiv:2405.07437.
+Yu, H., Gan, A., Zhang, K., Tong, S., Liu, Q. and Liu, Z. (2024)
+'Evaluation of Retrieval-Augmented Generation: A Survey',
+*arXiv preprint* arXiv:2405.07437.
 
 *Zheng, L., et al. (2023) 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena',
 *Proceedings of NeurIPS 2023*.
