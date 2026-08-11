@@ -151,23 +151,27 @@ This dissertation is structured across eight chapters. Chapter 2 reviews the res
 
 ## 2. RESEARCH GAP
 
+This chapter establishes the specific gap in the existing literature that this dissertation addresses. It begins by characterising the current state of automated RAG evaluation, then frames a structural problem — construct mismatch — that makes any comparison between frameworks non-trivial, and concludes by identifying the two precise empirical questions that remain unanswered.
+
 ### 2.1 Current State of RAG Evaluation
 
-Retrieval-Augmented Generation has become one of the most widely adopted architectures for building knowledge-grounded language model applications. As RAG has moved from research papers into production systems, the need for reliable evaluation has grown significantly. In response, several automated evaluation frameworks have emerged in recent years, including RAGAS (Es et al., 2024), ARES (Saad-Falcon et al., 2024), and the use of traditional information-retrieval metrics such as Precision@k, Mean Reciprocal Rank, and Normalised Discounted Cumulative Gain (Thakur et al., 2021).
+As RAG systems have moved from research prototypes into production deployments, the demand for reliable automated evaluation has generated a corresponding growth in evaluation frameworks. Three families now dominate the field. Traditional information-retrieval (IR) metrics — Precision@k, Mean Reciprocal Rank (MRR), and Normalised Discounted Cumulative Gain (nDCG) — were adapted from the classical document-retrieval literature and applied to RAG by Thakur et al. (2021) through the BEIR benchmark. RAGAS (Es et al., 2024) introduced a reference-free, LLM-as-judge approach capable of evaluating the full generation pipeline without human-annotated answers. ARES (Saad-Falcon et al., 2024) extended the LLM-judge concept by training domain-specific classifiers and calibrating their outputs with human labels through Prediction-Powered Inference.
 
-The critical problem is not that evaluation frameworks are absent, but that they were developed in isolation and have never been tested against each other on a common experimental ground. As Gan et al. (2025) observe, "despite the abundant evaluation frameworks at present, individual ones are somewhat limited in their metrics and methods of evaluation" — and identifying a balanced system evaluation method remains "one of the directions for future research." This fragmentation has direct practical consequences. Brown, Roman and Devereux (2025) note that RAGAS and ARES embody contrasting reliability assumptions — RAGAS is reference-free and sensitive to prompt variation, while ARES is annotation-dependent and quantitatively calibrated — yet critical questions about whether future frameworks might integrate the strengths of both methods remain unanswered. Similarly, Yu et al. (2024) observe the absence of a universally applicable grading methodology for LLM-as-judge approaches, noting that the growing number of evaluation dimensions makes it increasingly difficult to draw reliable conclusions from any single framework.
-
-While each of these frameworks measures something genuinely useful, each was introduced through papers that internally validated it using a small number of datasets and a particular RAG configuration. No published study has yet conducted a systematic empirical comparison on the same RAG configurations to determine whether they agree in their rankings. In addition, very few studies test whether the conclusions drawn from a single dataset hold when the same experiments are repeated on a different dataset.
+The critical problem is not that frameworks are absent, but that each was developed and validated in isolation, against its own datasets, and has never been compared directly with the others on a common experimental ground. As Gan et al. (2025) observe, "despite the abundant evaluation frameworks at present, individual ones are somewhat limited in their metrics and methods of evaluation," and identifying a balanced evaluation methodology remains an open research direction. Yu et al. (2024) similarly note the absence of a universally applicable grading approach for LLM-as-judge methods, observing that the growing number of evaluation dimensions makes it increasingly difficult to draw reliable conclusions from any single framework. Brown, Roman and Devereux (2025) go further, explicitly framing cross-framework reconciliation as future work, noting that RAGAS and ARES embody contrasting reliability assumptions — one reference-free and prompt-sensitive, the other annotation-dependent and statistically calibrated — without empirically testing whether these contrasting designs reach the same conclusions on the same systems.
 
 ### 2.2 The Construct Mismatch Problem
 
-One structural reason for this gap deserves explicit framing: the three framework families do not measure identical constructs. Traditional IR metrics (Precision@k, MRR, nDCG) evaluate only the retrieval stage, while RAGAS and ARES assess end-to-end generation quality — faithfulness, answer relevance, and context relevance. Some degree of disagreement between IR metrics and generation-focused metrics is therefore expected by design. What remains unknown is: (a) how much RAGAS and ARES — which share similar dimensions but differ fundamentally in judge methodology — agree with each other; (b) whether IR retrieval metrics align with the retrieval-sensitive components of RAGAS (context relevance) and ARES (context relevance); and (c) whether any observed agreement patterns hold across datasets. These questions have not been answered in the literature.
+A structural reason for this gap deserves explicit attention before the research questions are stated, because it affects how any comparison between frameworks must be interpreted. The three framework families do not measure identical constructs. Traditional IR metrics evaluate only the retrieval stage, assessing how well the ranked list of returned documents matches human relevance judgements. RAGAS and ARES, by contrast, assess end-to-end generation quality across dimensions including faithfulness, answer relevance, and context relevance. Some degree of disagreement between IR metrics and generation-focused metrics is therefore expected by design and does not indicate a deficiency in any single framework.
+
+What remains genuinely unknown — and what is not resolved by acknowledging the mismatch — is the following. First, how much do RAGAS and ARES agree with each other, given that they share similar measurement dimensions but differ fundamentally in judge methodology? Second, do IR retrieval metrics align with the retrieval-sensitive components of RAGAS and ARES, specifically context relevance, which both generation frameworks include? Third, are the answers to these questions consistent across datasets, or do they change when the experiment is repeated on a different corpus? None of these questions has been answered empirically.
 
 ### 2.3 The Identified Gap
 
-This raises two practical concerns. First, if different frameworks produce different rankings of the same RAG configurations, then any conclusion drawn from a single framework is of uncertain reliability. Second, if findings do not generalise across datasets, then practitioners cannot confidently transfer published recommendations to their own systems. Shi et al. (2024) confirm that "comprehensive evaluation of RAG systems is still challenging due to the modular nature of RAG, evaluation of long-form responses and reliability of measurements." Gan et al. (2025) identify balanced system evaluation as a future research direction. Brown et al. (2025) explicitly frame cross-framework reconciliation as an open question, noting RAGAS and ARES have contrasting reliability properties and have not been empirically compared. This dissertation directly addresses both observations.
+Two practical consequences follow from the state of the literature described above. If different evaluation frameworks produce different rankings of the same RAG configurations — which is possible given their construct and methodological differences — then any conclusion drawn from a single framework is of uncertain reliability, and the choice of framework becomes a consequential decision rather than an arbitrary one. If, furthermore, agreement patterns do not hold across datasets, then practitioners cannot confidently apply published evaluation findings to their own systems without re-running the full experiment on their own corpus.
 
-**Chapter Summary:** This chapter has traced the development of RAG evaluation from traditional IR metrics through LLM-judge frameworks, identifying the absence of cross-framework empirical comparison as the central gap. The construct mismatch between retrieval-focused metrics and end-to-end generation metrics has been framed explicitly, supported by evidence from recent surveys confirming this gap remains unaddressed. Chapter 3 formalises the research questions that the experimental investigation will address.
+Shi et al. (2024) confirm that "comprehensive evaluation of RAG systems is still challenging due to the modular nature of RAG, evaluation of long-form responses and reliability of measurements." Gan et al. (2025) identify balanced system evaluation as a future research priority. Brown et al. (2025) explicitly name cross-framework reconciliation as an open question. This dissertation addresses both the within-dataset agreement question and the cross-dataset stability question through a fully reproducible controlled experiment, the design of which is formalised in Chapter 3 and described in detail in Chapter 5.
+
+**Chapter Summary:** This chapter has characterised the current state of RAG evaluation, framed the construct mismatch problem that complicates any framework comparison, and identified the two specific empirical questions — cross-framework agreement and cross-dataset stability — that the literature has not resolved. Chapter 3 formalises these as research questions and maps each to the statistical analysis that will answer it.
 
 ---
 
@@ -179,22 +183,35 @@ How consistently do automated RAG evaluation frameworks (RAGAS, ARES, and tradit
 
 ### 3.2 Sub-questions
 
+The primary question is decomposed into three sub-questions, each targeting a distinct aspect of framework behaviour:
+
 **SQ1:** To what extent do RAGAS, ARES, and traditional IR metrics produce consistent rankings of the same RAG configurations on a primary dataset (MS MARCO)?
 
 **SQ2:** Do the framework agreement patterns observed on MS MARCO generalise to a secondary dataset (Natural Questions)?
 
 **SQ3:** Which RAG configuration variables (chunking strategy, retrieval method, reranking) cause the greatest performance differences across evaluation frameworks?
 
-### 3.3 Deliverables
+SQ1 and SQ2 address the agreement and stability questions established as gaps in Chapter 2. SQ3 addresses a complementary question: if frameworks do agree on rankings, what are they agreeing is the most important design variable? This is practically significant because it tells practitioners where optimisation effort is best spent, independent of framework choice.
 
-By the end of the dissertation:
-- A reproducible comparative benchmark (12 configurations × 2 datasets × 3 frameworks)
-- Empirical evidence on cross-dataset behaviour of evaluation frameworks
-- Practical guidance for practitioners on framework selection
+### 3.3 Analytical Approach
 
-When answering SQ1 and SQ2, the analysis distinguishes between comparable pairings (RAGAS vs ARES — both end-to-end LLM judges; IR context recall vs RAGAS context relevance — both retrieval-focused) and cross-construct pairings (IR nDCG vs RAGAS faithfulness — these measure different things and some disagreement is expected by design). Reporting both is necessary to ensure the results are not misinterpreted as a deficiency of any single framework.
+Each sub-question is answered by a specific statistical method, chosen to match the data structure and to be robust at the small sample size (n=12 configurations) that a factorial design within a dissertation budget produces.
 
-**Chapter Summary:** This chapter has formally stated the primary research question and three sub-questions guiding this dissertation. The construct comparability note ensures the analysis appropriately distinguishes same-construct from cross-construct framework comparisons, a distinction important for interpreting the results in Chapter 6. Chapter 4 reviews the prior literature on RAG architectures, retrieval methods, evaluation frameworks, and benchmark datasets.
+SQ1 and SQ2 are answered by pairwise Spearman rank correlation (ρ) between each pair of framework rankings across the twelve configurations. Spearman's ρ is appropriate here because the configurations have no meaningful cardinal spacing — what matters is their relative ordering, not the absolute distances between scores. Because n=12 gives limited statistical power and wide confidence intervals for standard Spearman ρ estimates, 10,000-iteration paired bootstrap resampling (seed=42) is used to produce 95% confidence intervals on each correlation, providing uncertainty quantification that a single point estimate cannot. Cross-dataset stability (SQ2) is additionally quantified by computing, for each framework, the Spearman ρ between its MS MARCO configuration ranking and its NQ configuration ranking.
+
+SQ3 is answered by Wilcoxon signed-rank tests on paired per-query scores, comparing each level of each design variable while marginalising over the other two variables. Wilcoxon's signed-rank test is preferred over a t-test here because RAG score distributions are typically non-normal and bounded. Effect size is reported as rank-biserial r rather than the p-value alone, since p-values at n=500 query pairs are effectively always significant and carry little practical meaning. Holm–Bonferroni correction is applied across the full family of Wilcoxon tests to control the familywise error rate.
+
+### 3.4 Deliverables
+
+The dissertation produces three concrete deliverables in response to the primary research question:
+
+- A reproducible comparative benchmark: twelve RAG configurations evaluated on two datasets using three framework families (24 evaluation runs total), with all code, data, and results publicly available on GitHub.
+- Empirical inter-framework agreement estimates: Spearman rank correlations with 10,000-iteration bootstrap confidence intervals for all pairwise framework comparisons on both datasets.
+- Practical guidance for RAG practitioners: evidence-grounded recommendations on framework selection and pipeline variable prioritisation, derived from the agreement and attribution analyses.
+
+A critical analytical note applies to all SQ1 and SQ2 results. As established in Chapter 2, the three framework families do not measure identical constructs: IR metrics assess retrieval quality, while RAGAS and ARES assess end-to-end generation quality. The analysis therefore distinguishes between comparable pairings — RAGAS versus ARES, which share measurement dimensions — and cross-construct pairings — IR nDCG versus RAGAS faithfulness — where some disagreement is expected by design. Reporting both without conflating them is necessary to ensure that a moderate IR–RAGAS correlation is not misread as evidence that either framework is deficient.
+
+**Chapter Summary:** This chapter has formally stated the primary research question, decomposed it into three sub-questions, mapped each to the statistical method that will answer it, and defined the three concrete deliverables the dissertation produces. Chapter 4 reviews the prior literature on RAG architectures, retrieval methods, evaluation frameworks, and benchmark datasets, establishing the scholarly context within which these research questions are situated.
 
 ---
 
@@ -202,98 +219,37 @@ When answering SQ1 and SQ2, the analysis distinguishes between comparable pairin
 
 ### 4.1 Foundations of Retrieval-Augmented Generation
 
-The RAG paradigm was formally introduced by Lewis et al. (2020), who combined a pre-trained
-sequence-to-sequence model with a dense vector index of external documents. The motivation was
-to address three well-documented limitations of large language models: factual hallucination,
-outdated parametric knowledge, and difficulty in attributing generated content to specific
-sources. Since this paper, RAG has been widely adopted across knowledge-intensive natural
-language tasks.
+The RAG paradigm was formally introduced by Lewis et al. (2020), who combined a pre-trained sequence-to-sequence model (BART) with a Dense Passage Retrieval index over Wikipedia. Their motivation was to address three well-documented limitations of large language models: factual hallucination, outdated parametric knowledge, and the difficulty of attributing generated content to specific sources. By conditioning generation on documents retrieved at inference time rather than on weights frozen during training, RAG produced substantial improvements on knowledge-intensive tasks including open-domain question answering, fact verification, and dialogue generation. Gao et al. (2023) subsequently categorised the growing diversity of RAG approaches into three families — Naïve RAG (single retrieval pass), Advanced RAG (with query rewriting and reranking), and Modular RAG (with interchangeable components) — a taxonomy that remains the standard framing in the field.
 
-The standard RAG pipeline operates in two stages. In the first stage, retrieval, a query is
-used to identify the top-k most relevant documents from a corpus. In the second stage,
-generation, a language model is conditioned on both the query and the retrieved documents.
-Gao et al. (2023) categorise RAG approaches into three families: Naïve RAG (single retrieval
-pass), Advanced RAG (with query rewriting and reranking), and Modular RAG (with swappable
-components).
-
-**Strength of Lewis et al. (2020):** Established the foundational architecture and demonstrated
-that external retrieval substantially reduces hallucination on knowledge-intensive tasks.
-**Weakness:** Fixed retriever (DPR); no reranking; evaluated with a single metric family
-(exact match, F1). Does not examine how evaluation methodology affects conclusions.
-**Synthesis:** Establishes the pipeline your experiments use, but its single-metric evaluation
-exemplifies the narrow evaluation practice your dissertation critiques.
+What the Lewis et al. work does not address, and what has largely gone unexamined since, is the evaluation side of the RAG pipeline. Their experiments used exact match and F1 score against known reference answers — metrics that measure generation correctness but say nothing about retrieval quality, answer faithfulness, or contextual grounding. This narrow evaluation practice, in which a single metric family is applied in isolation and its adequacy is assumed rather than tested, is precisely the fragmentation that the present dissertation addresses. Establishing the foundational pipeline is therefore the starting point of this review; identifying what the field has not corrected since Lewis et al. provides the motivating gap.
 
 ### 4.2 Retrieval Methods
 
-Retrieval in RAG systems generally relies on one of three families of methods.
+Retrieval in RAG systems has followed three broad methodological lineages, each with distinct trade-offs that are directly relevant to the experimental design of this dissertation. The oldest and still widely used is sparse retrieval, represented principally by BM25 (Robertson and Zaragoza, 2009). BM25 ranks documents by a term-frequency-weighted scoring function that rewards documents containing query terms that appear frequently in the document but infrequently across the corpus as a whole. It requires no training data, is computationally efficient at query time, and remains competitive on many benchmarks despite its simplicity. Its well-known limitation is reliance on exact lexical overlap: when query vocabulary does not match document vocabulary — as is common in open-domain settings where paraphrase and terminology variation are prevalent — BM25 systematically underperforms relative to methods that capture semantic similarity.
 
-**Sparse retrieval** (BM25, Robertson and Zaragoza, 2009) uses traditional term-frequency
-techniques. Interpretable and computationally cheap, BM25 continues to perform competitively
-on many benchmarks.
+Dense retrieval, introduced as Dense Passage Retrieval by Karpukhin et al. (2020), addresses this limitation by encoding both queries and documents into a shared semantic embedding space using dual-encoder neural networks, enabling retrieval by approximate nearest-neighbour search over continuous vector representations. Subsequent work has refined the approach: ColBERT (Khattab and Zaharia, 2020) introduced late interaction, allowing more expressive per-token matching at lower computational cost than full cross-attention over the corpus, while Sentence-BERT (Reimers and Gurevych, 2019) demonstrated that efficient sentence-level embeddings could be derived from siamese BERT networks trained on natural language inference data, providing a practical embedding backbone for downstream retrieval tasks.
 
-**Dense retrieval** encodes queries and documents into a shared semantic space using neural
-embeddings. Karpukhin et al. (2020) introduced Dense Passage Retrieval and established a
-strong baseline. ColBERT (Khattab and Zaharia, 2020) extends this with late interaction,
-enabling more expressive matching. Sentence-BERT (Reimers and Gurevych, 2019) provides
-efficient sentence-level embeddings widely used in practice.
-
-**Hybrid retrieval** combines sparse and dense methods through rank fusion. Reciprocal Rank
-Fusion (Cormack et al., 2009) merges ranked lists without score normalisation, frequently
-outperforming either method alone.
-
-**Key limitation of retrieval research for this study:** The BEIR benchmark (Thakur et al., 2021) demonstrates that dense retrievers show significant performance variability across domains — findings from one dataset do not necessarily generalise. This motivates the cross-dataset design (SQ2), and is cited explicitly as prior evidence that single-dataset findings are unreliable.
+Hybrid retrieval combines both lineages by merging BM25 and dense retrieval rankings through Reciprocal Rank Fusion (Cormack et al., 2009), a score-independent rank aggregation method that requires no normalisation across retrieval systems. Hybrid systems frequently outperform either method alone by capturing both the lexical precision of BM25 and the semantic coverage of dense encoders. The BEIR benchmark (Thakur et al., 2021), the most widely used evaluation environment for retrieval methods, demonstrates that dense retrievers exhibit significant performance variability across domains and explicitly cautions against assuming that single-dataset findings generalise to other settings. This warning from the retrieval literature directly motivates the cross-dataset design adopted in this dissertation (SQ2), providing prior empirical grounds for expecting that evaluation findings obtained on one dataset may not automatically transfer.
 
 ### 4.3 Evaluation Frameworks for RAG
 
-Several distinct approaches to evaluating RAG systems have emerged, each measuring a different
-set of constructs. The critical observation — largely unacknowledged in prior work — is that
-these approaches have never been directly compared on the same experimental conditions.
+The evaluation of RAG systems has produced three methodologically distinct framework families, each measuring a different set of constructs and each introduced through papers that validated it on its own datasets without direct comparison to the others. The central observation — which the surveys discussed in Section 4.4 confirm has not been addressed in the literature — is that these frameworks have never been applied simultaneously to the same RAG configurations, making it impossible to determine empirically whether they agree in their rankings or to establish which framework's conclusions should be trusted when they diverge.
 
-**Traditional IR metrics** (Precision@k, Recall@k, MRR, nDCG) focus exclusively on retrieval.
-These metrics have well-understood mathematical properties and are used in BEIR (Thakur et al.,
-2021). Strength: interpretable, reference-based, no LLM required. Weakness: measure only
-retrieval quality, not generation quality or faithfulness — a fundamental construct mismatch
-with end-to-end frameworks.
+Traditional information retrieval metrics — Precision@k, Recall@k, Mean Reciprocal Rank (MRR), and Normalised Discounted Cumulative Gain (nDCG) — are the oldest and most mathematically transparent of the three families. Originally developed for document retrieval evaluation before the emergence of generative models, they compare the ranked list of retrieved documents against human relevance judgements, producing scores that reflect how well the retrieval stage identifies and ranks relevant passages (Thakur et al., 2021). Their primary strength is interpretability and rigour: no language model is involved in scoring, the metrics carry well-understood statistical properties, and the reference judgements are typically constructed by human annotators. Their fundamental limitation for end-to-end RAG evaluation is a construct mismatch: they measure whether the correct documents were retrieved, not whether the generated answer is faithful, informative, or grounded in those documents. A RAG system that retrieves perfectly relevant documents but generates a hallucinated answer would receive a high IR score. This mismatch makes cross-construct comparisons with RAGAS and ARES a predictable source of disagreement, a consideration that is addressed explicitly in the statistical analysis in Section 3.3.
 
-**RAGAS** (Es et al., 2024) defines three metrics: faithfulness (answer grounded in context),
-answer relevance (answer addresses query), and context relevance (retrieved context relevant
-to query). Computed using LLM-as-judge with reference-free prompts.
-Strength: no reference answers needed; evaluates end-to-end pipeline.
-Weakness: sensitive to prompt variation (Brown et al., 2025); relies on the same LLM family
-as the generator, introducing self-preference bias (LLM judges favour stylistically familiar
-outputs — see threats to validity).
+RAGAS, introduced by Es et al. (2024), addresses this mismatch by evaluating the full end-to-end pipeline without requiring human-annotated reference answers. Its three core metrics — faithfulness, answer relevancy, and context precision — are all computed using a language model as the scoring judge. Faithfulness is measured through a two-step process: the generated answer is first decomposed into atomic statements, each of which is then independently assessed for entailment by the retrieved context. Answer relevancy reverses the generation direction, asking the judge to generate candidate questions from the answer and measuring the cosine similarity between these synthetic questions and the original query. Context precision assesses, for each retrieved passage independently, whether that passage was useful in arriving at the given answer. The reference-free design eliminates the bottleneck of human annotation at evaluation time, making RAGAS practically accessible for iterative development. The principal limitation identified by Brown et al. (2025) is sensitivity to prompt variation: because RAGAS relies on LLM-generated intermediate outputs, changes to prompt templates can shift scores without any corresponding change in underlying system quality. An additional concern specific to the present study is self-preference bias: when the same model family serves as both generator and judge, the judge may systematically favour stylistically familiar outputs independent of actual faithfulness, a bias documented by Zheng et al. (2023) and treated as an explicit threat to validity in Section 5.8.
 
-**ARES** (Saad-Falcon et al., 2024) trains domain-specific LLM judges on synthetic data,
-calibrated against human labels via Prediction-Powered Inference (Angelopoulos et al., 2023).
-Claims +59.3pp and +14.4pp over RAGAS on context and answer relevance (NAACL 2024).
-Strength: calibrated judges with confidence intervals; reduces prompt-sensitivity.
-Weakness: requires ~200 human-labelled examples per domain, limiting practical adoption;
-judges fail to generalise under drastic domain shifts (Saad-Falcon et al., 2024, NAACL).
-Critical note: ARES's superiority over RAGAS was measured on KILT and SuperGLUE — different
-datasets from RAGAS's WikiEval — making the comparison non-equivalent. This is precisely the
-problem this dissertation addresses.
+ARES (Saad-Falcon et al., 2024) shares RAGAS's three evaluation dimensions — context relevance, answer faithfulness, and answer relevance — but differs fundamentally in how scores are produced and calibrated. Where RAGAS uses a general-purpose LLM with reference-free prompts, ARES trains domain-specific classifier judges on synthetically generated question-answer pairs, then calibrates their outputs against a small set of human-annotated examples using Prediction-Powered Inference (PPI; Angelopoulos et al., 2023), a statistical framework that corrects for systematic judge bias when ground-truth labels are available. The ARES paper reports gains of +59.3 percentage points over RAGAS on context relevance and +14.4 percentage points on answer relevance. However, these comparisons are not equivalent to the one the present dissertation performs: RAGAS was evaluated on WikiEval and ARES on KILT and SuperGLUE, meaning neither framework was tested on the same configurations. This non-equivalence is precisely the problem this dissertation sets out to resolve. In practical terms, full ARES requires approximately 200 human-annotated examples per domain for PPI calibration, a requirement that limits adoption in resource-constrained settings. The implementation used in this dissertation employs zero-shot gpt-4o-mini judges in place of domain-specific trained classifiers, approximating ARES's judgement approach without its calibration machinery — an adaptation explicitly acknowledged as a limitation in Section 5.8.
 
-**RAGChecker** (Shi et al., 2024, arXiv:2408.08067) proposes claim-level evaluation and
-reports better human-judgment correlation than existing metrics. Acknowledges that
-"comprehensive evaluation of RAG systems is still challenging due to the modular nature of
-RAG, evaluation of long-form responses and reliability of measurements." Strength: fine-grained
-diagnosis at the claim level. Weakness: yet another framework validated in isolation, adding to
-the fragmentation it diagnoses.
+A further relevant framework is RAGChecker (Shi et al., 2024), which proposes claim-level evaluation of generated answers, comparing individual factual claims against retrieved passages rather than scoring at the full-response level, and reports stronger correlation with human judgements than RAGAS or standard IR metrics on its evaluation set. RAGChecker's own authors acknowledge that "comprehensive evaluation of RAG systems is still challenging due to the modular nature of RAG, evaluation of long-form responses and reliability of measurements" — a diagnosis that is consistent with the fragmentation this dissertation targets. Nonetheless, RAGChecker is itself validated in isolation, on its own datasets, without comparison to RAGAS or ARES under equivalent conditions, exemplifying the very problem it identifies. The present dissertation does not include RAGChecker within its primary evaluation framework given its greater implementation complexity and the need to keep the factorial design tractable, but acknowledges it as a candidate for inclusion in future work (Section 8.4).
 
-**LLM-as-Judge paradigm** (Zheng et al., 2023) underlies both RAGAS and ARES. Research has
-identified systematic biases: self-preference (the judge favours outputs from the same model
-family), position bias, and verbosity bias. LLM judges also assign higher scores to
-lower-perplexity outputs based on stylistic familiarity, independent of actual quality.
-These biases are directly relevant to any study using GPT-4o as both generator and judge.
+The LLM-as-judge paradigm that underlies both RAGAS and the adapted ARES implementation has been examined critically by Zheng et al. (2023), who identify three systematic biases: self-preference (the judge favours outputs from the same model family), position bias (the judge favours the option presented first in pairwise comparisons), and verbosity bias (the judge favours longer responses regardless of quality). These biases are directly relevant to this study, in which gpt-4o-mini serves as both the generator and the RAGAS and ARES judge, and their implications are addressed in the threats-to-validity analysis in Section 5.8.
 
 ### 4.4 Cross-Dataset Evaluation in RAG Research
 
-Cross-dataset evaluation remains comparatively rare. The BEIR benchmark (Thakur et al., 2021)
-demonstrates that dense retrievers show significant performance variability across domains,
-and warns against assuming single-dataset findings generalise. Despite this warning, the
-implication has not been systematically tested for evaluation framework agreement specifically.
+Cross-dataset evaluation of RAG systems remains comparatively rare, and cross-dataset evaluation of evaluation frameworks specifically has not, to the author's knowledge, been attempted prior to this dissertation. The BEIR benchmark (Thakur et al., 2021) established the most comprehensive evidence base on this question for retrieval methods, demonstrating that dense retrievers exhibit significant performance variability across the eighteen domains it covers and explicitly warning that single-dataset findings should not be assumed to generalise. Despite this warning, the field has largely continued to report evaluation results on a single dataset per study, and the question of whether framework agreement patterns themselves transfer across datasets has not been asked.
 
-Two recent systematic reviews confirm this gap remains open. Gan et al. (2025) identify balanced system evaluation as a future research direction, noting frameworks are individually limited. Brown et al. (2025) explicitly frame cross-framework reconciliation as an open question, noting RAGAS and ARES have contrasting reliability properties and have not been empirically compared. This dissertation directly addresses both observations.
+Two recent systematic reviews confirm that this gap extends to the evaluation framework literature. Gan et al. (2025), in a comprehensive survey of RAG evaluation in the era of large language models, identify balanced system evaluation methodology as an unresolved research direction, noting that individual frameworks are limited in their metrics and methods and that no consensus on a best-practice evaluation approach has emerged. Brown, Roman and Devereux (2025) conduct a systematic literature review covering techniques, metrics, and challenges in RAG, explicitly framing cross-framework reconciliation as an open question and observing that RAGAS and ARES embody contrasting reliability assumptions — RAGAS being reference-free and prompt-sensitive, ARES being annotation-dependent and statistically calibrated — without empirically testing whether these contrasting approaches reach the same conclusions on the same systems. This dissertation directly addresses both observations.
 
 ### 4.5 Literature Review Summary Table
 
@@ -309,15 +265,13 @@ Two recent systematic reviews confirm this gap remains open. Gan et al. (2025) i
 | Brown et al. (2025) | Multiple (review) | Systematic review | — | Poses cross-framework comparison as future work |
 | [Add 5–8 more from your own reading] | | | | |
 
-### 4.6 The Identified Gap
+### 4.6 Positioning This Dissertation
 
-The literature reviewed above contains multiple, internally validated evaluation frameworks
-for RAG systems. Crucially, as Gan et al. (2025) and Brown et al. (2025) confirm, no study
-has yet conducted a systematic empirical comparison of these frameworks against one another
-on the same configurations, nor tested whether agreement patterns generalise across datasets.
-This dissertation addresses both gaps.
+Taken together, the literature surveyed in this chapter establishes a clear and well-supported gap. Multiple families of automated RAG evaluation frameworks exist — traditional IR metrics, RAGAS, and ARES — each internally validated against its own datasets and each adopted in practice. No published study has subjected all three to a controlled, simultaneous comparison on the same RAG configurations, nor has any study tested whether the agreement patterns among these frameworks hold when the experiment is repeated on a different dataset. As Gan et al. (2025) and Brown et al. (2025) both confirm, this gap is recognised in the field and explicitly identified as future work.
 
-**Chapter Summary:** This chapter has reviewed the foundational and contemporary literature on RAG architectures, retrieval method families (sparse, dense, hybrid), three evaluation framework families, and cross-dataset evaluation practices. The critical observation — that no study has empirically compared IR metrics, RAGAS, and ARES under identical experimental conditions — was established through analysis of eight core papers and confirmed by two 2025 systematic reviews. Chapter 5 presents the methodology designed to address this gap.
+This dissertation's contribution accordingly lies in directly filling both gaps. By applying IR metrics, RAGAS, and a lightweight ARES adaptation to twelve RAG configurations across two BEIR-formatted datasets under identical experimental conditions — with bootstrap-quantified uncertainty on all agreement estimates — the present study provides the first systematic, empirical characterisation of inter-framework agreement and cross-dataset stability in RAG evaluation. The retrieval literature covered in Section 4.2 supplies the prior evidence that absolute performance scores are dataset-dependent; this dissertation tests whether relative configuration rankings, and the agreement between frameworks on those rankings, are similarly variable or reassuringly stable. No prior work has asked this question. The findings reported in Chapters 6 and 7 are therefore not a replication of existing results but a genuinely new empirical contribution to the RAG evaluation literature.
+
+**Chapter Summary:** This chapter has reviewed the foundational and contemporary literature on RAG architectures, retrieval method families (sparse, dense, hybrid), three evaluation framework families, and cross-dataset evaluation practices. Each section's analysis was structured to build toward the positioning argument in Section 4.6: the field has produced multiple capable frameworks, validated them in isolation, and left their comparative behaviour unexamined. Chapter 5 presents the methodology designed to address this gap through a fully reproducible, cross-framework, cross-dataset evaluation experiment.
 
 ---
 
