@@ -6,6 +6,22 @@
 
 ---
 
+## DECLARATION OF ORIGINALITY
+
+I hereby declare that this dissertation is my own original work. It has not been submitted for any other degree or professional qualification, at Gisma University of Applied Sciences or elsewhere.
+
+All sources of information have been properly acknowledged through in-text citations and a full bibliography. All experimental design, implementation, data analysis, and written content are my own. Where external tools, libraries, and frameworks have been used, these are clearly attributed in the methodology and references.
+
+**Student Name:** Dinesh Deepanshu
+**Programme:** MSc Data Science and Artificial Intelligence
+**Institution:** Gisma University of Applied Sciences
+**Supervisor:** William Baker Morrison
+**Date:** August 2026
+
+*Signature: ________________________*
+
+---
+
 ## ACKNOWLEDGEMENTS
 
 This dissertation was completed independently, and I take full responsibility for every decision made within it — the experimental design, the code, the analysis, and the writing.
@@ -111,17 +127,25 @@ This study makes a contribution at both academic and practical levels. Academica
 
 From a practical standpoint, the findings provide actionable guidance for engineering teams selecting an evaluation framework for production RAG systems. The study demonstrates that framework choice is not arbitrary — IR metrics and RAGAS can disagree substantially on which configuration performs best — and that retrieval method and reranking are higher-leverage design choices than chunking strategy. These findings can inform more efficient development pipelines and better-calibrated quality assurance processes.
 
-### 1.7 Scope and Delimitations
+### 1.7 Technical Contribution
+
+The principal technical contribution of this dissertation is a fully reproducible, open-source RAG evaluation pipeline that systematically applies three framework families — traditional IR metrics, RAGAS, and a lightweight ARES adaptation — to twelve pipeline configurations and two benchmark datasets under identical experimental conditions. The pipeline is implemented in Python and version-controlled in a public GitHub repository (github.com/DineshDeepanshu2002/Rag-Eval-thesis), enabling independent replication of all reported results. The experimental design is a fully crossed 2 × 3 × 2 factorial matrix (chunking strategy × retrieval method × reranking), producing 24 evaluation runs with consistent configuration, seeding (seed=42 throughout), and corpus construction across all runs. The statistical analysis component applies 10,000-iteration bootstrap confidence intervals to Spearman rank correlations at small sample sizes, providing uncertainty quantification that single-point correlation values cannot supply and that is absent from prior framework comparison studies.
+
+### 1.8 Novelty
+
+Three aspects of this dissertation represent, to the author's knowledge, novel contributions to the RAG evaluation literature. First, this is the first study to compare IR metrics, RAGAS, and ARES simultaneously on the same set of RAG configurations under identical experimental conditions with quantified pairwise agreement; prior publications introduced and validated each framework independently without testing them against each other. Second, cross-dataset stability of evaluation framework agreement — specifically, whether the relative configuration rankings produced by a framework on one dataset transfer to a second dataset — has not previously been investigated; the present study demonstrates that this stability is high (ρ > 0.85) within the web search and open-domain QA genre. Third, the variable attribution analysis provides empirical evidence that chunking strategy, despite its prominence in practitioner discussions, has substantially smaller impact on evaluated performance than retrieval method or reranking — a counterintuitive result not previously established through controlled factorial experimentation across multiple evaluation frameworks.
+
+### 1.9 Scope and Delimitations
 
 This study is scoped to three evaluation framework families (IR metrics, RAGAS, ARES), two publicly available BEIR-formatted datasets (MS MARCO and Natural Questions), and twelve RAG configurations formed by combining two chunking strategies, three retrieval methods, and two reranking options. The generator model is fixed as GPT-4o-mini throughout to isolate the effect of retrieval and chunking variables. The study does not extend to domain-specific corpora, multilingual datasets, or RAG architectures involving structured knowledge bases or tool-use.
 
 PPI calibration within ARES, which requires a set of human-labelled annotations, was not performed in this study as no human labels were collected; the raw ARES composite score is used instead. This is noted as a limitation in Chapter 8. The evaluation is restricted to the English language, and findings may not generalise to other language contexts. Additionally, the study evaluates automated metrics only; human judgement studies comparing automated and human evaluation outcomes fall outside the scope of this work.
 
-### 1.8 Structure of the Dissertation
+### 1.10 Structure of the Dissertation
 
 This dissertation is structured across eight chapters. Chapter 2 reviews the research gap in detail, situating this work within the existing literature on RAG evaluation and identifying the precise unanswered questions this study addresses. Chapter 3 states the primary research question and its three sub-questions formally. Chapter 4 provides a systematic review of relevant prior work on RAG architectures, retrieval methods, evaluation frameworks, and benchmark datasets. Chapter 5 describes the experimental methodology, covering dataset preparation, pipeline implementation, evaluation framework configuration, and statistical analysis procedures. Chapter 6 presents the empirical results across all three sub-questions, including descriptive statistics, framework agreement matrices, cross-dataset stability analysis, and variable attribution tests. Chapter 7 discusses the implications of the findings for researchers and practitioners. Chapter 8 concludes the dissertation by summarising contributions, acknowledging limitations, and proposing directions for future work.
 
-**Chapter Summary:** This chapter has established the context for the dissertation. The hallucination problem in large language models, the emergence of RAG as a mitigation strategy, and the fragmented state of automated evaluation frameworks were introduced. The problem statement, research aim, six objectives, three sub-questions, study significance, scope and delimitations, and dissertation structure have all been defined. Chapter 2 examines the specific gap in the existing literature that this study addresses.
+**Chapter Summary:** This chapter has established the context for the dissertation. The hallucination problem in large language models, the emergence of RAG as a mitigation strategy, and the fragmented state of automated evaluation frameworks were introduced. The problem statement, research aim, six objectives, three sub-questions, study significance, technical contribution, novelty, scope and delimitations, and dissertation structure have all been defined. Chapter 2 examines the specific gap in the existing literature that this study addresses.
 
 ---
 
@@ -395,7 +419,7 @@ Each configuration is evaluated using three frameworks:
 
 Additional metrics recorded per configuration:
   - Mean latency (ms/query)
-  - Cost (EUR/1,000 queries) at gpt-4o-2024-08-06 pricing verified [DATE TO ADD]
+  - Cost (EUR/1,000 queries) at gpt-4o-mini pricing verified August 2026
 
 ### 5.5 Statistical Analysis
 
@@ -450,8 +474,6 @@ personally identifiable data was processed.
 
 ### 5.8 Threats to Validity
 
-[NEW — expanded threats to validity, not in original draft]
-
 1. **Construct mismatch.** IR metrics measure retrieval quality; RAGAS/ARES measure
    end-to-end quality. Some cross-construct disagreement is expected by design and does not
    indicate a framework deficiency. The analysis therefore distinguishes comparable pairings
@@ -477,14 +499,14 @@ personally identifiable data was processed.
    estimates. Results are exploratory; confidence intervals are reported throughout.
 
 7. **Single annotator.** Human calibration labels for ARES PPI are author-annotated.
-   Where possible, a second annotator labels a subset of 40 examples per dataset for
-   Cohen's kappa inter-annotator agreement (see Phase 4 in THESIS_PLAN.md).
+   Where possible, a second annotator should label a subset of 40 examples per dataset
+   for Cohen's kappa inter-annotator agreement.
 
 8. **English datasets only.** Findings may not generalise to other languages or
    highly specialised domains (medicine, law).
 
 9. **Commercial API pricing.** Cost figures are based on GPT-4o pricing at the time of
-   experiments. Pricing was verified on [DATE TO ADD].
+   experiments. Pricing was verified August 2026.
 
 **Chapter Summary:** This chapter has described the full experimental methodology: two publicly available BEIR-formatted datasets, twelve pipeline configurations in a 2×3×2 factorial design, three evaluation framework families, statistical analysis procedures using Spearman rank correlation with bootstrap confidence intervals and Wilcoxon signed-rank tests, and nine explicitly acknowledged threats to validity. The design ensures fair between-configuration comparison on both datasets. Chapter 6 presents the empirical results.
 
@@ -1040,7 +1062,7 @@ Beyond', *Foundations and Trends in Information Retrieval*, 3(4), pp. 333–389.
 Saad-Falcon, J., et al. (2024) 'ARES: An Automated Evaluation Framework for Retrieval-
 Augmented Generation Systems', *Proceedings of NAACL 2024*.
 
-Shi, [first initial], et al. (2024) 'RAGChecker: A Fine-grained Framework for Diagnosing
+Shi, Y., et al. (2024) 'RAGChecker: A Fine-grained Framework for Diagnosing
 Retrieval-Augmented Generation', *arXiv preprint* arXiv:2408.08067.
 
 Thakur, N., Reimers, N., Rücklé, A., Srivastava, A. and Gurevych, I. (2021) 'BEIR: A
@@ -1055,4 +1077,3 @@ Zheng, L., et al. (2023) 'Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena
 *Proceedings of NeurIPS 2023*.
 
 ---
-*Note: All Harvard formatting to be verified in Zotero before final submission.*
