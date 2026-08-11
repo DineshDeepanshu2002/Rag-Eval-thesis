@@ -995,9 +995,57 @@ Respond with ONLY a JSON object: {"context_relevance": 0 or 1,
 
 Model: gpt-4o-mini | Temperature: 0.0 | Max tokens: 100 | Seed: 42
 
-### A.3 RAGAS prompts
-[TODO — record the exact prompts used by the pinned ragas version after first run.
-RAGAS prompt templates change between versions — this is critical to record.]
+### A.3 RAGAS prompts (ragas==0.4.3, extracted from installed source)
+
+RAGAS faithfulness is computed in two sequential LLM calls.
+
+**Step 1 — Statement Generator** (`StatementGeneratorPrompt`):
+```
+Given a question and an answer, analyze the complexity of each sentence in the answer.
+Break down each sentence into one or more fully understandable statements. Ensure that
+no pronouns are used in any statement. Format the outputs in JSON.
+```
+Input: `{question, answer}` → Output: `{statements: [str]}`
+
+**Step 2 — NLI Faithfulness Judge** (`NLIStatementPrompt`):
+```
+Your task is to judge the faithfulness of a series of statements based on a given context.
+For each statement you must return verdict as 1 if the statement can be directly inferred
+based on the context or 0 if the statement can not be directly inferred based on the context.
+```
+Input: `{context, statements: [str]}` → Output: `{statements: [{statement, reason, verdict: 0|1}]}`
+
+Score = (number of statements with verdict=1) / (total statements)
+
+Model: gpt-4o-mini | Temperature: 0.0 | Seed: 42
+
+---
+
+**Answer Relevancy** (`ResponseRelevancePrompt`):
+```
+Generate a question for the given answer and Identify if answer is noncommittal.
+Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal.
+A noncommittal answer is one that is evasive, vague, or ambiguous. For example,
+"I don't know" or "I'm not sure" are noncommittal answers.
+```
+Input: `{response}` → Output: `{question: str, noncommittal: 0|1}`
+
+This prompt is called N=3 times (strictness=3). Score = mean cosine similarity between original question and the 3 generated questions, multiplied by 0 if all answers are noncommittal. Embeddings: `sentence-transformers/all-MiniLM-L6-v2` (local).
+
+Model: gpt-4o-mini | Temperature: 0.0 | Seed: 42
+
+---
+
+**Context Precision** (`ContextPrecisionPrompt`):
+```
+Given question, answer and context verify if the context was useful in arriving at the
+given answer. Give verdict as "1" if useful and "0" if not with json output.
+```
+Input: `{question, context, answer}` → Output: `{reason: str, verdict: 0|1}`
+
+Applied once per retrieved context passage. Score = Average Precision (AP) over the ordered list of verdicts across the top-k retrieved passages.
+
+Model: gpt-4o-mini | Temperature: 0.0 | Seed: 42
 
 ---
 
