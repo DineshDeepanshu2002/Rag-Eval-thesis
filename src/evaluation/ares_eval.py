@@ -78,3 +78,7 @@ def ppi_mean(judge_all: np.ndarray, judge_labeled: np.ndarray,
     half = z * np.sqrt(var)
     return PPIResult(point=float(point),
                      lo=float(point - half), hi=float(point + half))
+
+
+
+

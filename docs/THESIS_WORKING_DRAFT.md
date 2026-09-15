@@ -367,7 +367,7 @@ Each configuration is evaluated using three frameworks:
   - Calibration: Prediction-Powered Inference (Angelopoulos et al., 2023) applied once
     ~200 human labels per dataset are available (results/human_labels/{dataset}.csv)
   - Adaptation note: Full ARES trains domain-specific classifier judges on synthetic data.
-    This dissertation uses a zero-shot GPT-4o judge + PPI calibration — a lightweight variant
+    This dissertation uses a zero-shot GPT-4o-mini judge + PPI calibration — a lightweight variant
     appropriate for a 6-month thesis. This adaptation is explicitly acknowledged; see
     threats to validity.
 
@@ -378,9 +378,9 @@ Additional metrics recorded per configuration:
 ### 5.5 Statistical Analysis
 
 Framework agreement (SQ1 and SQ2):
-  - Pairwise Spearman's rank correlation (ρ) between framework rankings of the 18 configs
+  - Pairwise Spearman's rank correlation (ρ) between framework rankings of the 12 configs
   - Paired bootstrap resampling (10,000 iterations, seed 42) for 95% confidence intervals
-    on each ρ — important given n=18 configurations provides limited statistical power
+    on each ρ — important given n=12 configurations provides limited statistical power
   - Analysed per dataset
 
 Cross-dataset generalisation (SQ2):
@@ -392,7 +392,7 @@ Variable attribution (SQ3):
   - Effect size: rank-biserial r
   - Multiple-comparison correction: Holm–Bonferroni over the family of Wilcoxon tests
 
-At n=18 configurations, Spearman correlations carry wide confidence intervals. A correlation
+At n=12 configurations, Spearman correlations carry wide confidence intervals. A correlation
 of ρ=0.6, for example, has a 95% CI spanning roughly ±0.3 at this sample size. Results will
 therefore be framed as exploratory and indicative rather than definitive, and CIs will be
 reported alongside all correlation estimates.
@@ -437,19 +437,19 @@ personally identifiable data was processed.
    (Recall@k, absolute nDCG) are underestimated; MRR and P@k are more reliable and
    prioritised in the analysis.
 
-3. **Self-preference / familiarity bias.** GPT-4o is used as both generator and RAGAS judge.
+3. **Self-preference / familiarity bias.** GPT-4o-mini is used as both generator and RAGAS judge.
    LLM judges are known to favour stylistically familiar (lower-perplexity) outputs independent
-   of quality. This may inflate RAGAS scores for GPT-4o-generated answers.
+   of quality. This may inflate RAGAS scores for GPT-4o-mini-generated answers.
 
 4. **ARES adaptation.** Full ARES uses domain-specific fine-tuned judges; this study uses
-   zero-shot GPT-4o + PPI. Scores may differ from those produced by the full ARES system.
+   zero-shot GPT-4o-mini + PPI. Scores may differ from those produced by the full ARES system.
    Explicitly framed as an adapted lightweight variant.
 
 5. **Corpus pooling.** The pooled corpus (50,000 docs) reduces retrieval difficulty relative
    to the full MS MARCO / NQ index. Comparisons between configurations remain fair (identical
    pool), but absolute retrieval scores should not be extrapolated to full-index settings.
 
-6. **Statistical power.** n=18 configurations gives limited power for rank-correlation
+6. **Statistical power.** n=12 configurations gives limited power for rank-correlation
    estimates. Results are exploratory; confidence intervals are reported throughout.
 
 7. **Single annotator.** Human calibration labels for ARES PPI are author-annotated.
@@ -459,7 +459,7 @@ personally identifiable data was processed.
 8. **English datasets only.** Findings may not generalise to other languages or
    highly specialised domains (medicine, law).
 
-9. **Commercial API pricing.** Cost figures are based on GPT-4o pricing at the time of
+9. **Commercial API pricing.** Cost figures are based on GPT-4o-mini pricing at the time of
    experiments. Pricing was verified August 2026.
 
 **Chapter Summary:** This chapter has described the full experimental methodology: two publicly available BEIR-formatted datasets, twelve pipeline configurations in a 2×3×2 factorial design, three evaluation framework families, statistical analysis procedures using Spearman rank correlation with bootstrap confidence intervals and Wilcoxon signed-rank tests, and nine explicitly acknowledged threats to validity. The design ensures fair between-configuration comparison on both datasets. Chapter 6 presents the empirical results.
