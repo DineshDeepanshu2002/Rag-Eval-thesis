@@ -19,8 +19,6 @@ All sources of information have been properly acknowledged through in-text citat
 **Supervisor:** William Morrison
 **Date:** 25 September 2026
 
-*Signature: ________________________*
-
 ---
 
 ## ACKNOWLEDGEMENTS
