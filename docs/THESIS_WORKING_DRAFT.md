@@ -34,10 +34,6 @@ I would also like to acknowledge the open-source communities behind the tools th
 
 This dissertation is proof to myself that it can be done — alone, from scratch, all the way through.
 
-*Dinesh*
-*Gisma University of Applied Sciences*
-*September 2026*
-
 ---
 
 ## ABSTRACT
