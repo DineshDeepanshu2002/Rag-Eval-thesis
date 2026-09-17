@@ -1,19 +1,19 @@
-# Supervision Meeting — Final Speech (Tue 2 Sep 2026, with William Baker Morrison)
+# Supervision Meeting — Final Speech (with William Baker Morrison)
 
 > Speak naturally, pause at the paragraph breaks. Target ~8–10 minutes, then discussion.
-> The one number to land slowly: **ρ = 0.59 with a CI crossing zero** — that IS the thesis.
-> Keep the ACL example in your back pocket for the ARES question.
+> The moment to land slowly: **raw ARES ρ = 0.95 with IR → after calibration ρ = −0.49.**
+> That reversal IS the thesis now. Keep the ACL example ready to explain *why* the judge was biased.
 
 ---
 
 ## 1. Opening (30 sec)
 
-"Thanks for making the time, Will. I've got a real update today. Since your last
-feedback, the experiments are completely finished — 24 runs, 12 configurations across
-two datasets — and I now have a full working draft through Chapter 8, about 12,000
-words. So I'd like to walk you through how I addressed your five points, show you what
-I actually found, then raise a few honest doubts — and finally ask you about the
-submission date."
+"Thanks for making the time, Will. Big update since we last spoke. The experiments are
+finished — 24 runs, 12 configurations across two datasets — I completed the ARES human
+calibration, and I have a full working draft through Chapter 8. And the calibration changed
+my central finding in a way I think is genuinely more interesting. Let me walk you through
+how I addressed your five points, then the results, then a couple of things I'd like your
+steer on — including the submission date."
 
 ## 2. How I addressed your five points (tight)
 
@@ -33,91 +33,81 @@ submission date."
 And on the GenAI note — understood; the thinking and the writing are mine, and I'm
 happy to talk through any part of it live."
 
-## 3. What I found
+## 3. What I found — the calibration result (this is the headline)
 
-"Now the substance.
+"Here's the substance, and the headline changed for the better.
 
-**SQ1 — do the frameworks agree?** This is the core finding. On MS MARCO, IR metrics
-and ARES agree very strongly — Spearman ρ of 0.95, CI from 0.77 to 1.0. But IR metrics
-and RAGAS faithfulness agree only moderately — ρ of 0.59, and the confidence interval
-actually crosses zero, from minus 0.03 up to 0.92. RAGAS and ARES sit in between at 0.73.
+**SQ1 — do the frameworks agree?** Before calibration, raw ARES agreed with IR metrics
+*very strongly* — Spearman ρ of 0.95. Taken at face value that would say a cheap zero-shot
+LLM judge is a great proxy for traditional IR evaluation. But once I calibrated ARES against
+my 200 human labels per dataset, that agreement didn't just weaken — it *reversed*. IR versus
+calibrated ARES is now minus 0.49 on MS MARCO and minus 0.64 on NQ. Meanwhile IR versus
+RAGAS stays a moderate, positive 0.59 to 0.64.
 
-The takeaway is the whole point of the thesis: the evaluation framework you choose
-materially changes the ranking you get. Someone using RAGAS alone could recommend a
-different RAG configuration than someone using IR metrics.
+The mechanism is score compression: once you debias the judge against the human labels, all
+twelve configurations land in a tiny band between 0.77 and 0.84 — so ARES can barely tell
+them apart, and its ranking becomes essentially noise. So the real finding is a cautionary
+one: **the apparent agreement between an uncalibrated LLM judge and IR metrics was an
+artefact of the judge's bias — and calibration is what exposed it.** That's a useful warning,
+because a lot of people are now using zero-shot LLM judges with no calibration at all.
 
-**SQ2 — does that hold on a second dataset?** Yes. On Natural Questions the pattern
-replicates — cross-dataset stability of 0.94 for IR, 0.95 for RAGAS, 0.85 for ARES —
-and the ordering is preserved: IR–ARES strongest, IR–RAGAS weakest. So the disagreement
-is a systematic property of the frameworks, not dataset noise.
+**SQ2 — does it hold on a second dataset?** It sharpens. IR and RAGAS rankings are highly
+stable across datasets — 0.94 and 0.95. But calibrated ARES has *no* cross-dataset stability
+— minus 0.19, with a confidence interval spanning zero — so its ranking doesn't transfer.
+That's a second, independent line of evidence that the raw agreement wasn't real signal.
 
-**SQ3 — which design choice matters most?** I ran paired Wilcoxon signed-rank tests
-with Holm–Bonferroni correction at the per-query level, n=500. Retrieval method
-dominates — effect size 0.97 for BM25 versus hybrid, p around ten to the minus 45.
-Reranking is second at 0.91. Chunking is the weakest lever at about 0.34 — and,
-against the usual assumption, fixed chunking beat semantic chunking on both datasets.
-So my practical guidance is: invest in retrieval and reranking, don't over-engineer chunking.
+**SQ3 — which design choice matters most?** Unchanged — it's per-query, n=500, untouched by
+calibration. Retrieval method dominates, effect size 0.97; reranking second at 0.91; chunking
+weakest at 0.34, and fixed chunking beat semantic on both datasets. Practical guidance:
+invest in retrieval and reranking, don't over-engineer chunking.
 
-**Cost** — the whole study ran on gpt-4o-mini for cents per thousand queries, so it's a
-genuinely reproducible, low-budget protocol."
+**Cost** — the whole study ran on gpt-4o-mini for cents per thousand queries — a genuinely
+reproducible, low-budget protocol."
 
 ## 4. How much is drafted
 
-"On the writing: the draft is complete end to end — introduction, gap, research
-questions, the critical lit review with the table, full methodology, a results chapter
-with all four analysis tables, discussion, and conclusion with limitations and future
-work. Appendix A has every prompt verbatim, Appendix B the annotation guideline, and
-the reference list is complete. So what's left is polishing prose and fixing
-consistency — not new research or new writing."
+"On the writing: the draft is complete end to end — introduction, gap, research questions,
+the critical lit review with the table, full methodology, a results chapter with all four
+analysis tables, discussion, and conclusion with limitations and future work. Appendix A has
+every prompt verbatim, Appendix B the annotation guideline, and the reference list is
+complete. I've just finished rewriting the results, discussion and conclusion around the
+calibrated numbers. So what's left is polishing, not new research."
 
-## 5. My doubts — where I want your steer
+## 5. What I'd like your steer on
 
-"Now the honest part.
+"A few things I want your judgement on.
 
-**First, and most important — ARES and PPI.** I ran ARES as a zero-shot gpt-4o-mini
-judge, without the human-calibration step called PPI. Let me be concrete about why that
-matters. Take a real case from my data: the question 'how long to recover from ACL
-surgery.' The passage says patients return to *light activity* in 2–3 weeks. The model's
-answer said *full recovery* in 2–3 weeks. The LLM judge marked that faithful — a human
-would mark it unfaithful, because the answer overstates the source. LLM judges are
-reliably too lenient on that kind of subtle overstatement. PPI fixes it: you hand-label
-about 200 examples per dataset, measure how generous the judge is, and correct the whole
-set — so a raw ARES score of, say, 0.82 might become 0.72 with a proper confidence
-interval.
+**First — is the calibration story framed right?** My reading is that the reversal is the
+real contribution: it's direct evidence that an uncalibrated LLM judge can agree spuriously
+with an established metric. I want to check you're comfortable with me making that the
+headline, rather than the old 'frameworks agree' framing.
 
-My question: is it acceptable to submit ARES as an honest, clearly-labelled lightweight
-variant *without* PPI and note it as a limitation — or do you want me to do the 200
-hand-labels per dataset so it's fully calibrated? My own view is the lightweight version
-is defensible for a 6-month MSc, but I want your call.
+**Second — the negative sign.** I want to be honest that at n=12, with the scores compressed
+into a narrow band, the negative correlation is partly noise — the CI crosses zero on MS
+MARCO, though on NQ it's significantly negative. I frame it as 'agreement collapses to
+near-zero / negative,' not 'the frameworks are strongly anti-correlated.' Does that read as
+appropriately cautious to you?
 
-**Second — construct mismatch.** IR metrics measure retrieval only, but RAGAS and ARES
-measure the whole end-to-end system. So some disagreement is expected by design. Is it
-fair to compare their rankings head-to-head, or should I frame it strictly as comparable
-pairings?
+**Third — single annotator.** The 400 calibration labels are mine alone. I've flagged the
+lack of a second rater and Cohen's kappa as a limitation. Is that acceptable, or would you
+want a second annotator on a subset?
 
-**Third — statistical power.** At n=12 configurations the correlation CIs are wide, and
-one crosses zero. Is it acceptable to frame the agreement analysis as exploratory?
-
-**Fourth — scope.** The pipeline runs cleanly now. Are you happy with 12 configs across
-two datasets, or do you want the full 18 back?"
+**Fourth — construct mismatch.** IR is retrieval-only; RAGAS and ARES are end-to-end. I treat
+some IR–RAGAS gap as expected by design — is that the right framing?"
 
 ## 6. The ask — submission date
 
-"There's one more thing I want to raise directly. The submission deadline is
-September 27th, and I'd like your permission to aim for that date. My reasoning: the
-experiments are done, the full draft already exists, and the references are complete —
-so I'm polishing, not writing from scratch. My plan is to get you a clean full draft by
-September 17th, which leaves the ten days the handbook asks for you to review and sign
-off before the 27th. To keep that realistic, I'd propose we lock the ARES approach as
-the lightweight no-PPI variant with an honest limitation, rather than adding a labelling
-round — that's the one thing that could push me past the deadline. Does that plan work
-for you, and are you comfortable signing off toward the 27th?"
+"One more thing directly. The deadline is September 27th, and I'd like your permission to aim
+for it. The experiments are done, the draft exists, and I've already folded in the calibrated
+results — so I'm polishing, not writing from scratch. My plan is to get you a clean full draft
+by September 17th, leaving the ten days the handbook asks for you to review and sign off
+before the 27th. Does that work, and are you comfortable signing off toward the 27th?"
 
 ## 7. Close
 
-"That's my update. If we can settle the ARES question and the timeline today, I'll know
-exactly what to do this week. Can we also set the next meeting date, confirm what I send
-you beforehand, and log this as one of my six required supervision meetings? Thank you."
+"That's my update. If we can confirm the framing and the timeline today, I'll know exactly
+what to do this week. Can we set the next meeting date, agree what I send beforehand, and log
+this as one of my six required supervision meetings? Thank you."
 
 ---
 
@@ -125,23 +115,28 @@ you beforehand, and log this as one of my six required supervision meetings? Tha
 
 | Item | Value |
 |---|---|
-| SQ1 MS MARCO: IR vs RAGAS | ρ = 0.59, CI [−0.03, 0.92]  ← the headline |
-| SQ1 MS MARCO: IR vs ARES | ρ = 0.95, CI [0.77, 1.0] |
-| SQ1 MS MARCO: RAGAS vs ARES | ρ = 0.73 |
-| SQ2 cross-dataset stability | IR 0.94 · RAGAS 0.95 · ARES 0.85 |
+| SQ1 IR vs ARES — **raw → calibrated** | **0.95 → −0.49** (MS MARCO) · 0.87 → **−0.64** (NQ) ← the story |
+| SQ1 IR vs RAGAS (stable, positive) | 0.587 [−0.03, 0.92] · 0.643 [0.13, 0.89] |
+| SQ1 RAGAS vs ARES (calibrated) | 0.266 (MSM) · −0.497 (NQ) |
+| Calibrated ARES score band | 0.77–0.84 across all 12 configs (compressed) |
+| SQ2 cross-dataset stability | IR 0.944 · RAGAS 0.951 · **ARES −0.189** (CI spans 0) |
 | SQ3 effect sizes | retrieval 0.97 · rerank 0.91 · chunking 0.34 |
 | SQ3 significance | all pairs, Holm–Bonferroni, p < 10⁻¹⁰ |
+| Calibration labels | 200 MS MARCO + 200 NQ = 400, author-annotated |
 | Cost | cents per 1k queries, gpt-4o-mini |
-| Draft | ~12,000 words, all 8 chapters + appendices |
 | Deadline ask | full draft to Will 17 Sep → submit 27 Sep |
 
 ## Be ready to explain in my own words
 Spearman ρ · 10k-iteration bootstrap CIs · Wilcoxon signed-rank + Holm–Bonferroni ·
-PPI (Angelopoulos 2023) · the ACL faithfulness example · why retrieval/rerank beat chunking.
+PPI (Angelopoulos 2023) · the ACL faithfulness example (why the judge was too lenient) ·
+score compression → noisy ranking · why retrieval/rerank beat chunking.
 
 ## If he pushes back
-- **"Why no PPI?"** → time/scope for a 6-month MSc; it's flagged as a limitation, code is
-  wired to run it if labels are added later.
-- **"n=12 is thin."** → agreed; framed exploratory, all CIs reported, per-query tests (n=500)
-  carry the SQ3 claims.
-- **"18 configs?"** → pipeline supports it; can add if he wants, but it risks the 27 Sep date.
+- **"Is the sign flip a bug?"** → No. Labels have real variance (means 0.70–0.91). The
+  mechanism is score compression: debiased scores sit in a 0.77–0.84 band, so ranking is
+  noise-dominated → near-zero/negative correlation + no cross-dataset transfer.
+- **"Why is ARES so compressed?"** → A zero-shot binary judge, once debiased, saturates near
+  the top for twelve already-competent RAG configs.
+- **"n=12 is thin."** → Agreed; framed exploratory, all CIs reported; SQ3 rests on per-query
+  tests (n=500).
+- **"Single annotator?"** → Flagged as a limitation; second-rater kappa is proposed future work.

@@ -36,46 +36,17 @@ This dissertation is proof to myself that it can be done — alone, from scratch
 
 *Dinesh*
 *Gisma University of Applied Sciences*
-*August 2026*
+*September 2026*
 
 ---
 
 ## ABSTRACT
 
-Retrieval-Augmented Generation (RAG) systems are increasingly deployed in production
-settings where reliable automated evaluation is essential for system development and
-quality assurance. Three families of automated evaluation frameworks have emerged:
-traditional information retrieval (IR) metrics (nDCG, MRR, Precision@k), RAGAS
-(Es et al., 2024), and ARES (Saad-Falcon et al., 2024). Despite the availability of
-these frameworks, no prior study has systematically compared them on the same experimental
-conditions or examined whether their agreement patterns generalise across datasets —
-a gap explicitly identified by Gan et al. (2025) and Brown et al. (2025).
-
-This dissertation addresses both gaps through a fully reproducible comparative experiment.
-Twelve RAG configurations (2 chunking strategies × 3 retrieval methods × 2 reranking
-options) were evaluated on two BEIR-formatted datasets — MS MARCO and Natural Questions —
-using all three framework families, yielding 24 evaluation runs across 500 queries each.
-Statistical analysis employed Spearman rank correlation with 10,000-iteration bootstrap
-confidence intervals (SQ1/SQ2) and Wilcoxon signed-rank tests with Holm–Bonferroni
-correction (SQ3).
-
-The results reveal substantial asymmetry in inter-framework agreement. IR metrics and
-ARES composite agree very strongly (ρ = 0.951 on MS MARCO; 0.865 on NQ), while IR metrics
-and RAGAS faithfulness agree only moderately (ρ = 0.587; 0.643). These patterns are stable
-across both datasets: cross-dataset ranking stability exceeds ρ = 0.85 for all three
-frameworks. Variable attribution shows that retrieval method is the dominant design variable
-(rank-biserial |r| = 0.972 for BM25 vs hybrid), followed by reranking (|r| = 0.906), with
-chunking strategy producing the smallest effect (|r| = 0.338) — and fixed chunking
-outperforming semantic chunking contrary to expectations.
-
-The dissertation concludes that framework choice materially affects configuration rankings:
-RAGAS and IR metrics can disagree on the best-performing configuration. For practitioners,
-retrieval method and reranking represent higher-leverage optimisation targets than chunking.
-Cross-dataset stability suggests that rankings obtained on one dataset are transferable
-within the web search and open-domain QA domain.
+Retrieval-Augmented Generation (RAG) systems are increasingly deployed in production settings where reliable automated evaluation is essential, yet three competing families of evaluation frameworks — traditional information retrieval (IR) metrics (nDCG, MRR, Precision@k), RAGAS (Es et al., 2024), and ARES (Saad-Falcon et al., 2024) — have never been systematically compared on the same experimental conditions or tested for whether their agreement generalises across datasets, a gap identified by Gan et al. (2025) and Brown et al. (2025). This dissertation addresses that gap through a fully reproducible experiment: twelve RAG configurations (2 chunking strategies × 3 retrieval methods × 2 reranking options) were evaluated on two BEIR-formatted datasets, MS MARCO and Natural Questions, using all three framework families, yielding 24 runs across 500 queries each, analysed with Spearman rank correlation and 10,000-iteration bootstrap confidence intervals (SQ1/SQ2) and Wilcoxon signed-rank tests with Holm–Bonferroni correction (SQ3). The central result is that inter-framework agreement depends critically on judge calibration: ARES composite scores were calibrated against 200 human-labelled examples per dataset using Prediction-Powered Inference (PPI; Angelopoulos et al., 2023), and whereas raw ARES agreed very strongly with IR metrics (ρ = 0.951 on MS MARCO), after calibration this agreement collapses and reverses (ρ = −0.490 on MS MARCO; −0.641 on NQ) and calibrated ARES rankings no longer replicate across datasets (cross-dataset stability ρ = −0.189, confidence interval spanning zero), because calibration compresses ARES scores into a narrow 0.77–0.84 band with little discriminative signal; IR and RAGAS faithfulness, by contrast, agree moderately and stably (ρ = 0.587 and 0.643; cross-dataset stability ρ ≥ 0.94). Variable attribution shows retrieval method is the dominant design variable (rank-biserial |r| = 0.972 for BM25 vs hybrid), followed by reranking (|r| = 0.906), with chunking weakest (|r| = 0.338) and fixed chunking outperforming semantic chunking contrary to expectations. The dissertation concludes that framework choice materially affects configuration rankings and — more consequentially — that the apparent agreement between an uncalibrated LLM judge and established IR metrics can be an artefact of miscalibration, cautioning practitioners against treating uncalibrated LLM-judge scores as a proxy for retrieval quality.
 
 *Keywords: Retrieval-Augmented Generation, evaluation frameworks, RAGAS, ARES, IR metrics,
-framework agreement, Spearman correlation, MS MARCO, Natural Questions, BEIR*
+framework agreement, judge calibration, Prediction-Powered Inference, Spearman correlation,
+MS MARCO, Natural Questions, BEIR*
 
 ---
 
@@ -346,6 +317,48 @@ Note: gpt-4o-mini was selected over gpt-4o-2024-08-06 to remain within the proje
 budget while preserving the experimental design. The use of a smaller model is acknowledged
 as a limitation (see Section 5.8); the model version is fixed and recorded for reproducibility.
 
+### 5.3.1 Conceptual Model of the Study's Variables
+
+Figure 5.1 presents the conceptual model underlying the experimental design, expressed as
+the relationships between the study's independent, dependent, and moderating variables. It
+serves as a blueprint for the methodology: the three design factors are manipulated, the
+generator is held constant, and the resulting per-configuration outputs are scored by three
+evaluation frameworks whose agreement is the object of study.
+
+```mermaid
+flowchart LR
+    subgraph IV["Independent variables (design factors)"]
+        A["Chunking<br/>fixed / semantic"]
+        B["Retrieval<br/>BM25 / dense / hybrid"]
+        C["Reranking<br/>none / cross-encoder"]
+    end
+    IV --> P["RAG pipeline<br/>generator held constant:<br/>gpt-4o-mini, T = 0.0"]
+    P --> O["Per-configuration outputs<br/>retrieved contexts + generated answers"]
+    O --> DV
+    subgraph DV["Dependent variables (evaluation frameworks)"]
+        D["IR metrics<br/>nDCG@10, MRR, P@k"]
+        E["RAGAS<br/>faithfulness, answer rel., context prec."]
+        F["ARES composite<br/>PPI-calibrated"]
+    end
+    DV --> Q12["SQ1 / SQ2: inter-framework agreement<br/>Spearman rho + bootstrap CIs"]
+    IV -. "SQ3: variable attribution (Wilcoxon + Holm-Bonferroni)" .-> Q3["Effect of each design factor"]
+    M["Moderator: Dataset<br/>MS MARCO / NQ"] -. tests cross-dataset generalisation .-> Q12
+```
+
+**Figure 5.1 — Conceptual model of the study's variables (author's own construction).**
+The **independent variables** are the three RAG design factors — chunking strategy, retrieval
+method, and reranking — fully crossed into the twelve configurations. These drive a RAG
+pipeline in which the generator (gpt-4o-mini) is held constant so that observed differences
+are attributable to the design factors rather than to generation. Each configuration yields
+retrieved contexts and generated answers, which are scored by the three **dependent
+variables**: IR metrics, RAGAS, and the PPI-calibrated ARES composite. **Dataset** (MS MARCO
+vs NQ) acts as a **moderating variable**, allowing the agreement patterns to be tested for
+cross-dataset generalisation. The hypothesised relationships are twofold: (i) the design
+factors influence measured performance (tested in SQ3, variable attribution), and (ii) the
+three frameworks, though nominally measuring "quality," need not agree on the resulting
+configuration ranking (tested in SQ1/SQ2, inter-framework agreement) — a divergence the
+results show to be strongly dependent on whether the LLM judge is calibrated.
+
 ### 5.4 Evaluation Frameworks
 
 Each configuration is evaluated using three frameworks:
@@ -364,11 +377,13 @@ Each configuration is evaluated using three frameworks:
 **ARES** (adapted from Saad-Falcon et al., 2024):
   - Dimensions: context_relevance, answer_faithfulness, answer_relevance (binary, 0/1)
   - Judge: zero-shot gpt-4o-mini with the JUDGE_PROMPT in ares_eval.py
-  - Calibration: Prediction-Powered Inference (Angelopoulos et al., 2023) applied once
-    ~200 human labels per dataset are available (results/human_labels/{dataset}.csv)
+  - Calibration: Prediction-Powered Inference (Angelopoulos et al., 2023) applied using
+    200 human-labelled examples per dataset (results/human_labels/{dataset}.csv). PPI
+    corrects the zero-shot judge's bias against the human labels and yields 95% confidence
+    intervals (ares_ci_lo / ares_ci_hi) on the calibrated composite.
   - Adaptation note: Full ARES trains domain-specific classifier judges on synthetic data.
-    This dissertation uses a zero-shot GPT-4o-mini judge + PPI calibration — a lightweight variant
-    appropriate for a 6-month thesis. This adaptation is explicitly acknowledged; see
+    This dissertation uses a zero-shot gpt-4o-mini judge with PPI calibration — a lightweight
+    variant appropriate for a 6-month thesis. This adaptation is explicitly acknowledged; see
     threats to validity.
 
 Additional metrics recorded per configuration:
@@ -478,39 +493,39 @@ raw data are available in results/tidy_config_scores.csv.
 Table 6.1 presents the mean scores per configuration on MS MARCO. Table 6.2 presents NQ results.
 Configurations are sorted by nDCG@10 (the primary IR metric).
 
-**Table 6.1 — MS MARCO: per-configuration mean scores (n=500 queries)**
+**Table 6.1 — MS MARCO: per-configuration mean scores (n=500 queries; ARES Comp. = PPI-calibrated)**
 
 | Config | nDCG@10 | RAGAS Faith. | RAGAS Ans.Rel. | ARES Comp. | Cost €/1k |
 |---|---|---|---|---|---|
-| fixed\_\_hybrid\_\_cross\_encoder | **0.948** | 0.730 | 0.579 | **0.884** | 0.077 |
-| fixed\_\_dense\_\_cross\_encoder | 0.948 | 0.736 | **0.589** | 0.889 | 0.077 |
-| semantic\_\_hybrid\_\_cross\_encoder | 0.921 | 0.636 | 0.501 | 0.854 | 0.049 |
-| semantic\_\_dense\_\_cross\_encoder | 0.920 | 0.633 | 0.503 | 0.845 | 0.048 |
-| fixed\_\_dense\_\_none | 0.908 | **0.740** | 0.579 | 0.877 | 0.074 |
-| semantic\_\_dense\_\_none | 0.869 | 0.645 | 0.493 | 0.836 | 0.043 |
+| fixed\_\_hybrid\_\_cross\_encoder | **0.948** | 0.730 | 0.579 | 0.812 | 0.077 |
+| fixed\_\_dense\_\_cross\_encoder | 0.948 | 0.736 | **0.589** | 0.813 | 0.077 |
+| semantic\_\_hybrid\_\_cross\_encoder | 0.921 | 0.636 | 0.501 | 0.807 | 0.049 |
+| semantic\_\_dense\_\_cross\_encoder | 0.920 | 0.633 | 0.503 | 0.794 | 0.048 |
+| fixed\_\_dense\_\_none | 0.908 | **0.740** | 0.579 | 0.821 | 0.074 |
+| semantic\_\_dense\_\_none | 0.869 | 0.645 | 0.493 | 0.823 | 0.043 |
 | fixed\_\_bm25\_\_cross\_encoder | 0.804 | 0.672 | 0.525 | 0.830 | 0.079 |
-| fixed\_\_hybrid\_\_none | 0.784 | 0.696 | 0.539 | 0.839 | 0.077 |
-| semantic\_\_hybrid\_\_none | 0.774 | 0.618 | 0.462 | 0.806 | 0.047 |
-| semantic\_\_bm25\_\_cross\_encoder | 0.767 | 0.594 | 0.434 | 0.777 | 0.049 |
-| fixed\_\_bm25\_\_none | 0.611 | 0.652 | 0.448 | 0.759 | 0.079 |
-| semantic\_\_bm25\_\_none | **0.589** | **0.587** | **0.370** | **0.710** | **0.050** |
+| fixed\_\_hybrid\_\_none | 0.784 | 0.696 | 0.539 | **0.839** | 0.077 |
+| semantic\_\_hybrid\_\_none | 0.774 | 0.618 | 0.462 | 0.826 | 0.047 |
+| semantic\_\_bm25\_\_cross\_encoder | 0.767 | 0.594 | 0.434 | 0.810 | 0.049 |
+| fixed\_\_bm25\_\_none | 0.611 | 0.652 | 0.448 | 0.832 | 0.079 |
+| semantic\_\_bm25\_\_none | **0.589** | **0.587** | **0.370** | 0.818 | **0.050** |
 
-**Table 6.2 — NQ: per-configuration mean scores (n=500 queries)**
+**Table 6.2 — NQ: per-configuration mean scores (n=500 queries; ARES Comp. = PPI-calibrated)**
 
 | Config | nDCG@10 | RAGAS Faith. | RAGAS Ans.Rel. | ARES Comp. | Cost €/1k |
 |---|---|---|---|---|---|
-| fixed\_\_hybrid\_\_cross\_encoder | **0.945** | 0.691 | 0.526 | **0.869** | 0.112 |
-| fixed\_\_dense\_\_cross\_encoder | 0.945 | 0.705 | **0.529** | 0.871 | 0.111 |
-| fixed\_\_dense\_\_none | 0.922 | **0.709** | 0.524 | 0.864 | 0.104 |
-| semantic\_\_hybrid\_\_cross\_encoder | 0.904 | 0.572 | 0.421 | 0.795 | 0.063 |
-| semantic\_\_dense\_\_none | 0.906 | 0.600 | 0.428 | 0.811 | 0.059 |
-| semantic\_\_dense\_\_cross\_encoder | 0.903 | 0.561 | 0.416 | 0.795 | 0.060 |
-| fixed\_\_bm25\_\_cross\_encoder | 0.849 | 0.673 | 0.489 | 0.839 | 0.118 |
-| fixed\_\_hybrid\_\_none | 0.836 | 0.670 | 0.501 | 0.838 | 0.115 |
-| semantic\_\_hybrid\_\_none | 0.822 | 0.556 | 0.384 | 0.779 | 0.063 |
-| semantic\_\_bm25\_\_cross\_encoder | 0.811 | 0.552 | 0.365 | 0.764 | 0.066 |
-| fixed\_\_bm25\_\_none | 0.681 | 0.625 | 0.435 | 0.789 | 0.122 |
-| semantic\_\_bm25\_\_none | **0.667** | **0.571** | **0.321** | **0.718** | **0.063** |
+| fixed\_\_hybrid\_\_cross\_encoder | **0.945** | 0.691 | 0.526 | 0.785 | 0.112 |
+| fixed\_\_dense\_\_cross\_encoder | 0.945 | 0.705 | **0.529** | 0.774 | 0.111 |
+| fixed\_\_dense\_\_none | 0.922 | **0.709** | 0.524 | 0.791 | 0.104 |
+| semantic\_\_hybrid\_\_cross\_encoder | 0.904 | 0.572 | 0.421 | 0.792 | 0.063 |
+| semantic\_\_dense\_\_none | 0.906 | 0.600 | 0.428 | 0.790 | 0.059 |
+| semantic\_\_dense\_\_cross\_encoder | 0.903 | 0.561 | 0.416 | 0.794 | 0.060 |
+| fixed\_\_bm25\_\_cross\_encoder | 0.849 | 0.673 | 0.489 | 0.805 | 0.118 |
+| fixed\_\_hybrid\_\_none | 0.836 | 0.670 | 0.501 | 0.781 | 0.115 |
+| semantic\_\_hybrid\_\_none | 0.822 | 0.556 | 0.384 | 0.789 | 0.063 |
+| semantic\_\_bm25\_\_cross\_encoder | 0.811 | 0.552 | 0.365 | **0.807** | 0.066 |
+| fixed\_\_bm25\_\_none | 0.681 | 0.625 | 0.435 | 0.794 | 0.122 |
+| semantic\_\_bm25\_\_none | **0.667** | **0.571** | **0.321** | 0.811 | 0.063 |
 
 **Key descriptive observations:**
 
@@ -522,8 +537,12 @@ Configurations are sorted by nDCG@10 (the primary IR metric).
    not for the configurations with highest IR scores. This preliminary observation motivates
    the formal agreement analysis in Section 6.2.
 
-3. ARES composite closely tracks nDCG@10 rankings, with the same top and bottom
-   configurations identified by both metrics.
+3. The PPI-calibrated ARES composite does *not* track nDCG@10. Its values are compressed into
+   a narrow band (0.79–0.84 on MS MARCO; 0.77–0.81 on NQ), and several of the lowest-nDCG
+   configurations (e.g. fixed\_\_bm25\_\_none, nDCG 0.611) receive among the *highest* calibrated
+   ARES scores. This inversion is quantified formally in Section 6.2. (The raw, uncalibrated
+   ARES composite did track nDCG closely — ρ = 0.951 — but that agreement did not survive
+   calibration; see Section 7.1.)
 
 4. Semantic chunking produces consistently lower scores than fixed chunking across all
    metrics and both datasets, contradicting the intuition that semantic segmentation
@@ -538,41 +557,45 @@ Configurations are sorted by nDCG@10 (the primary IR metric).
 ### 6.2 Framework Agreement — MS MARCO (SQ1)
 
 To address SQ1, pairwise Spearman rank correlations were computed between the three
-framework rankings of the 12 configurations on MS MARCO. Bootstrap confidence intervals
-(10,000 resamples, seed 42) are reported alongside each estimate.
+framework rankings of the 12 configurations on MS MARCO. ARES composite scores are
+PPI-calibrated against the 200 human labels for MS MARCO (Section 5.4). Bootstrap confidence
+intervals (10,000 resamples, seed 42) are reported alongside each estimate.
 
-**Table 6.3 — Spearman rank correlation matrix (MS MARCO, n=12 configurations)**
+**Table 6.3 — Spearman rank correlation matrix (MS MARCO, n=12 configurations, ARES PPI-calibrated)**
 
 | | IR nDCG@10 | RAGAS Faithfulness | ARES Composite |
 |---|---|---|---|
-| **IR nDCG@10** | 1.000 | 0.587 [–0.029, 0.915] | **0.951** [0.771, 1.000] |
-| **RAGAS Faithfulness** | 0.587 [–0.029, 0.915] | 1.000 | 0.727 [0.199, 0.957] |
-| **ARES Composite** | **0.951** [0.771, 1.000] | 0.727 [0.199, 0.957] | 1.000 |
+| **IR nDCG@10** | 1.000 | **0.587** [–0.029, 0.915] | −0.490 [−0.885, 0.097] |
+| **RAGAS Faithfulness** | **0.587** [–0.029, 0.915] | 1.000 | 0.266 [−0.290, 0.716] |
+| **ARES Composite** | −0.490 [−0.885, 0.097] | 0.266 [−0.290, 0.716] | 1.000 |
 
 Three findings are apparent from Table 6.3:
 
-**Finding 1 (IR–ARES strong agreement).** IR nDCG@10 and ARES composite are very strongly
-correlated (ρ = 0.951, 95% CI [0.771, 1.000]). The lower bound of the confidence interval
-remains above 0.77, providing strong evidence that this agreement is not a sampling artefact
-at n=12. This suggests that a zero-shot LLM judge (ARES) and a traditional relevance-based
-metric (IR) largely agree on which configurations produce the best-ranked retrievals and answers.
+**Finding 1 (IR–RAGAS moderate positive agreement).** IR nDCG@10 and RAGAS faithfulness
+show a moderate positive correlation (ρ = 0.587, 95% CI [–0.029, 0.915]) — the strongest
+positive pairing on MS MARCO. The confidence interval narrowly crosses zero, indicating
+non-negligible uncertainty at this sample size. This is consistent with the
+construct-mismatch hypothesis: RAGAS faithfulness measures whether answers are grounded in
+retrieved context, while nDCG@10 measures retrieval rank quality — these constructs are
+related but not equivalent. Configurations with moderate retrieval quality may still produce
+highly faithful answers if the generator stays within context boundaries, and vice versa.
 
-**Finding 2 (IR–RAGAS moderate agreement).** IR nDCG@10 and RAGAS faithfulness show
-moderate correlation (ρ = 0.587, 95% CI [–0.029, 0.915]). The confidence interval crosses
-zero, indicating non-negligible uncertainty at this sample size. This is consistent with
-the construct-mismatch hypothesis: RAGAS faithfulness measures whether answers are
-grounded in retrieved context, while nDCG@10 measures retrieval rank quality —
-these constructs are related but not equivalent. In particular, configurations with
-moderate retrieval quality may still produce highly faithful answers if the generator
-stays within context boundaries, and vice versa.
+**Finding 2 (IR–ARES negative after calibration).** Once ARES is PPI-calibrated, its
+composite ranking correlates *negatively* with IR nDCG@10 (ρ = −0.490, 95% CI
+[−0.885, 0.097]). This is a marked reversal: the uncalibrated (raw) ARES composite agreed
+very strongly with IR on the identical configurations (ρ = 0.951; see Section 7.1).
+Calibration compresses the ARES composite into a narrow band — all twelve configurations
+score between 0.77 and 0.84 — leaving almost no between-configuration variance for the
+ranking to reflect. The apparent IR–ARES agreement in the raw scores was therefore an
+artefact of the judge's uncalibrated bias rather than a stable measurement of configuration
+quality. This interpretation is developed in Section 7.1.
 
-**Finding 3 (RAGAS–ARES moderate-high agreement).** RAGAS and ARES, which share similar
-evaluation dimensions (context relevance, answer faithfulness, answer relevance), show
-moderate-high agreement (ρ = 0.727, 95% CI [0.199, 0.957]). Despite measuring similar
-constructs, they employ fundamentally different methodologies: RAGAS uses reference-free
-multi-step prompts with embedding-based scoring; ARES uses a single zero-shot binary
-judgement prompt. The residual disagreement (ρ < 1.0) therefore reflects methodological
-divergence rather than construct divergence.
+**Finding 3 (RAGAS–ARES weak agreement).** RAGAS and ARES, despite sharing three measurement
+dimensions (context relevance, answer faithfulness, answer relevance), show only weak
+positive agreement after calibration (ρ = 0.266, 95% CI [−0.290, 0.716]), with a confidence
+interval spanning zero. The same score compression that weakens the IR–ARES relationship
+applies here: a calibrated binary judge that saturates near the top of its range provides
+limited discriminative signal for ranking already-competitive configurations.
 
 ---
 
@@ -583,35 +606,41 @@ MS MARCO (Section 6.2) was replicated on NQ. Second, each framework's cross-data
 ranking stability — Spearman ρ between its MS MARCO config ranking and its NQ config
 ranking — was computed.
 
-**Table 6.4 — Spearman rank correlation matrix (NQ, n=12 configurations)**
+**Table 6.4 — Spearman rank correlation matrix (NQ, n=12 configurations, ARES PPI-calibrated)**
 
 | | IR nDCG@10 | RAGAS Faithfulness | ARES Composite |
 |---|---|---|---|
-| **IR nDCG@10** | 1.000 | 0.643 [0.134, 0.886] | **0.865** [0.529, 0.985] |
-| **RAGAS Faithfulness** | 0.643 [0.134, 0.886] | 1.000 | **0.883** [0.574, 0.995] |
-| **ARES Composite** | **0.865** [0.529, 0.985] | **0.883** [0.574, 0.995] | 1.000 |
+| **IR nDCG@10** | 1.000 | **0.643** [0.134, 0.886] | −0.641 [−0.955, −0.084] |
+| **RAGAS Faithfulness** | **0.643** [0.134, 0.886] | 1.000 | −0.497 [−0.863, 0.106] |
+| **ARES Composite** | −0.641 [−0.955, −0.084] | −0.497 [−0.863, 0.106] | 1.000 |
 
-The agreement pattern observed on MS MARCO largely replicates on NQ, with one notable
-difference: the RAGAS–ARES correlation increases substantially from 0.727 (MS MARCO)
-to 0.883 (NQ), while the IR–RAGAS correlation increases modestly from 0.587 to 0.643.
-The direction of all relationships is preserved: IR–ARES remains the strongest pairing;
-IR–RAGAS remains the weakest.
+The pattern observed on MS MARCO replicates on NQ, and in the case of ARES it strengthens.
+The IR–RAGAS correlation remains moderate and positive (0.587 → 0.643). The negative IR–ARES
+relationship not only persists but becomes stronger and more certain: ρ = −0.641 with a
+confidence interval [−0.955, −0.084] that excludes zero. RAGAS–ARES, weakly positive on
+MS MARCO (0.266), is negative on NQ (−0.497). The direction of the calibrated relationships
+is therefore preserved and, for the LLM judge, sharpened: IR and RAGAS agree moderately and
+positively, while calibrated ARES disagrees with both.
 
-**Table 6.5 — Cross-dataset ranking stability per framework**
+**Table 6.5 — Cross-dataset ranking stability per framework (ARES PPI-calibrated)**
 
 | Framework | Spearman ρ (MSMARCO → NQ) | 95% CI |
 |---|---|---|
 | IR nDCG@10 | **0.944** | [0.697, 1.000] |
 | RAGAS Faithfulness | **0.951** | [0.728, 1.000] |
-| ARES Composite | 0.851 | [0.456, 0.992] |
+| ARES Composite | **−0.189** | [−0.715, 0.404] |
 
-All three frameworks show high cross-dataset stability: the configuration rankings produced
-on MS MARCO are reproduced almost identically on NQ. IR and RAGAS achieve near-perfect
-cross-dataset Spearman correlations (0.944 and 0.951 respectively), with confidence intervals
-that do not approach zero. ARES shows slightly lower but still strong stability (0.851),
-with a wider confidence interval reflecting greater between-configuration variance in
-the ARES composite score. This finding supports a positive answer to SQ2: the agreement
-patterns observed on MS MARCO generalise to NQ.
+This table is the decisive SQ2 result. IR and RAGAS achieve near-perfect cross-dataset
+Spearman correlations (0.944 and 0.951 respectively), with confidence intervals that do not
+approach zero — the configuration rankings they produce on MS MARCO are reproduced almost
+identically on NQ. Calibrated ARES, by contrast, shows *no* cross-dataset stability
+(ρ = −0.189, 95% CI [−0.715, 0.404] spanning zero): its configuration ranking on MS MARCO
+does not carry over to NQ. This is consistent with the score-compression mechanism of
+Section 6.2 — once calibration removes the judge's bias, the residual between-configuration
+differences are too small to constitute a stable ranking signal, so ARES rankings behave
+like noise across datasets. SQ2 therefore has a split answer: the agreement patterns of the
+*non-LLM-judge* frameworks (IR, RAGAS) generalise robustly to NQ, whereas the calibrated
+LLM judge (ARES) does not produce a transferable ranking.
 
 ---
 
@@ -683,7 +712,7 @@ configuration achieves nDCG@10 = 0.948 at €0.077/1k, while semantic + dense + 
 achieves nDCG@10 = 0.920 at only €0.048/1k — a 14% reduction in IR performance for a 38%
 reduction in cost.
 
-**Chapter Summary:** This chapter has presented the empirical results of 24 evaluation runs across twelve configurations and two datasets. Framework agreement reveals substantial asymmetry: IR and ARES correlate strongly (ρ = 0.951 on MS MARCO), while IR and RAGAS correlate only moderately (ρ = 0.587). Cross-dataset ranking stability exceeds ρ = 0.85 for all three frameworks. Variable attribution identifies retrieval method as the dominant design variable (|r| = 0.972), followed by reranking (|r| = 0.906), with chunking strategy producing the weakest effect (|r| = 0.338). Chapter 7 interprets these findings in relation to the research questions and existing literature.
+**Chapter Summary:** This chapter has presented the empirical results of 24 evaluation runs across twelve configurations and two datasets. With ARES PPI-calibrated against 200 human labels per dataset, framework agreement reveals that IR and RAGAS agree moderately and positively (ρ = 0.587 on MS MARCO; 0.643 on NQ), while calibrated ARES correlates negatively with IR (ρ = −0.490 and −0.641) — a reversal of the strong positive agreement seen in the raw, uncalibrated ARES scores. Cross-dataset ranking stability is high for IR (ρ = 0.944) and RAGAS (ρ = 0.951) but absent for calibrated ARES (ρ = −0.189, CI spanning zero), because calibration compresses ARES scores into a narrow 0.77–0.84 band with little discriminative signal. Variable attribution identifies retrieval method as the dominant design variable (|r| = 0.972), followed by reranking (|r| = 0.906), with chunking strategy producing the weakest effect (|r| = 0.338). Chapter 7 interprets these findings in relation to the research questions and existing literature.
 
 ---
 
@@ -694,38 +723,51 @@ findings to the existing literature, and draws practical implications for framew
 
 ### 7.1 What the Agreement Patterns Reveal
 
-The most striking result is the asymmetry between the three pairwise framework relationships.
-IR and ARES agree strongly (ρ = 0.951 on MS MARCO; 0.865 on NQ), while IR and RAGAS agree
-only moderately (ρ = 0.587; 0.643), and RAGAS–ARES occupies an intermediate position
-(ρ = 0.727; 0.883).
+The most consequential result of this study is what happens to ARES when it is calibrated.
+In the raw, uncalibrated scores, ARES agreed very strongly with IR metrics (ρ = 0.951 on
+MS MARCO; 0.865 on NQ) — a result that, taken at face value, would suggest a zero-shot binary
+LLM judge is an excellent low-cost proxy for traditional IR evaluation. After PPI calibration
+against 200 human labels per dataset, that agreement does not merely weaken; it reverses
+(ρ = −0.490 on MS MARCO; −0.641 on NQ) and, on NQ, becomes significantly negative. This is
+the single most important finding of the dissertation, and it is a cautionary one.
 
-This asymmetry is not self-evident: one might expect ARES and RAGAS — which share three
-measurement dimensions (context relevance, answer faithfulness, answer relevance) — to agree
-more with each other than either does with a structurally different metric family (IR). The
-results suggest the opposite, at least on MS MARCO. The explanation lies in methodological
-differences between the two LLM-judge frameworks. RAGAS applies multi-step prompts with
-intermediate decomposition (for faithfulness: statement extraction then entailment checking)
-and uses embedding similarity for answer relevancy scoring. ARES applies a single zero-shot
-binary judgement per dimension, and has no embedding component. When the generator (gpt-4o-mini)
-produces an answer that is contextually plausible but not formally grounded in the retrieved
-context, RAGAS's multi-step decomposition may detect the lack of support while ARES's simpler
-binary judgement does not — or vice versa. This methodological difference, rather than
-construct disagreement, likely accounts for the moderate RAGAS–ARES correlation.
+The mechanism is score compression. PPI corrects the zero-shot judge's systematic leniency
+by anchoring its aggregate scores to the human labels. Because the twelve configurations are
+all reasonably competent RAG pipelines, the debiased judge rates them all similarly: the
+calibrated ARES composite spans only 0.77–0.84 across all twelve configurations. When the
+between-configuration variance is this small, the *ranking* those scores induce is dominated
+by noise rather than by genuine quality differences. A noise-dominated ranking will correlate
+near zero — or, by chance at n=12, moderately negative — with any external ranking, and will
+not replicate on a second dataset. Both signatures are exactly what the data show: the
+near-zero-to-negative IR–ARES and RAGAS–ARES correlations (Section 6.2–6.3) and the absence
+of ARES cross-dataset stability (ρ = −0.189, Section 6.3).
 
-The strong IR–ARES agreement (ρ > 0.85 on both datasets) is theoretically interpretable.
-Configurations with better retrieval quality (higher nDCG@10) deliver higher-quality contexts
-to the generator, which in turn produces answers that are more likely to be relevant and
-faithful. ARES's binary judgements, while simplified, appear sensitive to this pipeline-wide
-quality signal. RAGAS faithfulness, by contrast, focuses on the generation stage in isolation
-— a configuration could retrieve highly relevant documents but the generator might still
-hallucinate, or retrieve mediocre documents but generate a faithful (though uninformative)
-response. This construct focus on the generation stage, independent of retrieval quality,
-explains why RAGAS correlates less strongly with IR.
+The implication is methodological and general. The strong raw IR–ARES agreement was an
+*artefact of the judge's uncalibrated bias*, not evidence that the judge measures
+configuration quality the way IR does. A shared, roughly constant inflation across
+configurations can manufacture apparent agreement with an external metric while carrying no
+real ranking information. This directly demonstrates the risk that the ARES framework's own
+authors sought to address with calibration: **an uncalibrated LLM judge can produce
+spuriously strong agreement with an established metric, and only calibration against human
+labels reveals how little discriminative signal the judge actually contributes.** This is a
+concrete, quantified caution for the many practitioners now using zero-shot LLM judges
+without calibration.
+
+By contrast, the IR–RAGAS relationship is unaffected by calibration (RAGAS is not calibrated
+here) and remains the most informative positive pairing (ρ = 0.587 on MS MARCO; 0.643 on NQ).
+RAGAS faithfulness focuses on the generation stage — whether the answer is grounded in the
+retrieved context — which is related to, but not identical with, the retrieval rank quality
+that nDCG@10 measures. A configuration could retrieve highly relevant documents yet still
+hallucinate, or retrieve mediocre documents yet generate a faithful (if uninformative)
+answer. This construct difference explains why IR and RAGAS agree moderately rather than
+perfectly, and the agreement is stable across both datasets.
 
 This finding extends prior work. Brown et al. (2025) hypothesised that RAGAS and ARES have
-"contrasting reliability assumptions" but did not empirically test their agreement. The results
-here confirm that the contrast is real and quantifiable: on MS MARCO, RAGAS and IR disagree
-on roughly 41% of the configuration ranking (1 – ρ = 0.413), while ARES and IR agree on 95%.
+"contrasting reliability assumptions" but did not empirically test their agreement, nor the
+effect of judge calibration. The results here show that the more important contrast is not
+between the two LLM-judge frameworks but between calibrated and uncalibrated judging: the
+same ARES judge moves from ρ = 0.951 to ρ = −0.490 against IR purely as a function of
+calibration.
 
 ### 7.2 Which Variable Drives Performance, and Why
 
@@ -759,23 +801,26 @@ explanations are not mutually exclusive.
 
 ### 7.3 Cross-Dataset Behaviour
 
-The cross-dataset stability analysis (Section 6.3) shows that all three frameworks produce
-very similar configuration rankings on MS MARCO and NQ (ρ = 0.944, 0.951, and 0.851
-respectively). This is a substantively important result: it means that a practitioner who
-runs this evaluation on one dataset can expect the configuration ranking to transfer to
-another dataset of comparable type. This partially contradicts the pessimistic framing of
+The cross-dataset stability analysis (Section 6.3) shows that the two non-LLM-judge
+frameworks produce very similar configuration rankings on MS MARCO and NQ (IR: ρ = 0.944;
+RAGAS: ρ = 0.951), whereas the calibrated LLM judge does not (ARES: ρ = −0.189, CI spanning
+zero). The IR and RAGAS result is substantively important: a practitioner who runs an
+IR- or RAGAS-based evaluation on one dataset can expect the configuration ranking to transfer
+to another dataset of comparable type. This partially contradicts the pessimistic framing of
 Thakur et al. (2021), who found that dense retrievers' absolute scores vary substantially
-across BEIR sub-datasets. The present results suggest that while absolute performance
-levels may not transfer, *relative rankings of configurations* are highly stable — at
-least within the web search and open-domain QA genre represented by MS MARCO and NQ.
+across BEIR sub-datasets. The present results suggest that while absolute performance levels
+may not transfer, *relative rankings of configurations under IR and RAGAS* are highly stable
+— at least within the web search and open-domain QA genre represented by MS MARCO and NQ.
 
-The one exception is the RAGAS–ARES agreement pattern: ρ increases from 0.727 (MS MARCO)
-to 0.883 (NQ). A likely explanation is NQ's query characteristics — Natural Questions
-are shorter, more precise, and have cleaner ground-truth answers than MS MARCO's
-conversational queries. On cleaner queries, RAGAS's multi-step decomposition and ARES's
-binary judgement are more likely to reach the same conclusion, reducing methodological
-divergence. This suggests that the RAGAS–ARES gap observed on MS MARCO may be partly
-query-style dependent.
+The calibrated ARES result reinforces the interpretation of Section 7.1 rather than
+qualifying it. If calibrated ARES were measuring genuine, dataset-independent configuration
+quality, its ranking would replicate across datasets as IR's and RAGAS's do. It does not:
+the cross-dataset stability of −0.189, with a confidence interval spanning zero, is the
+signature of a ranking with no reliable signal to transfer. This is precisely what
+score-compression predicts — after debiasing, the between-configuration differences ARES
+can resolve are smaller than the noise, so neither the within-dataset correlations nor the
+cross-dataset ranking are stable. Non-replication here is thus not a separate anomaly but a
+second, independent line of evidence that the uncalibrated IR–ARES agreement was an artefact.
 
 ### 7.4 Practical Guidance for Framework Selection
 
@@ -786,13 +831,21 @@ intended for practitioners evaluating RAG pipelines in search-based or open-doma
 RAGAS's moderate agreement with IR metrics (ρ ≈ 0.59–0.64) means it cannot reliably
 substitute for IR evaluation when the goal is to optimise retrieval. Configurations ranked
 highly by RAGAS may not be those with the best retrieval quality, and vice versa. If
-retrieval quality is the primary concern, IR metrics should be prioritised.
+retrieval quality is the primary concern, IR metrics should be prioritised. That said, of
+the LLM-based frameworks RAGAS is the more informative: its ranking is both positively
+correlated with IR and stable across datasets.
 
-**Recommendation 2: ARES (or a lightweight zero-shot binary judge) provides a reliable
-proxy for IR performance.** The strong IR–ARES agreement (ρ ≈ 0.87–0.95) suggests that
-a simple binary LLM judge, applied without PPI calibration, largely replicates the
-configuration ranking produced by traditional IR metrics. This is useful in settings where
-relevance judgements are unavailable but LLM API access is.
+**Recommendation 2: Do not treat an uncalibrated zero-shot LLM judge as a proxy for IR
+performance.** This is the study's central cautionary finding. Uncalibrated ARES appeared to
+be an excellent IR proxy (ρ ≈ 0.87–0.95), but that agreement was an artefact of the judge's
+systematic leniency: after PPI calibration against human labels the correlation reversed
+(ρ = −0.490 on MS MARCO; −0.641 on NQ) and the ranking failed to replicate across datasets.
+Practitioners using a zero-shot binary judge without calibration should assume its apparent
+agreement with established metrics may be spurious. Where an LLM judge is used for
+configuration ranking, it should be calibrated against a modest set of human labels
+(≈200 per dataset here), and its discriminative power checked — if calibrated scores
+collapse into a narrow band, the judge is not resolving the configurations and its ranking
+should not be trusted.
 
 **Recommendation 3: Prioritise retrieval method selection over chunking strategy.**
 The variable attribution results show that switching from BM25 to hybrid retrieval produces
@@ -805,13 +858,15 @@ reranker to any retrieval configuration consistently produces a large performanc
 (|r| = 0.73–0.91). For production systems where latency permits an additional reranking
 pass, this is the single most impactful pipeline modification after retrieval method selection.
 
-**Recommendation 5: Findings from one dataset are likely to transfer.** Cross-dataset
-stability (ρ > 0.85 for all frameworks) suggests that practitioners can run evaluation on
-a representative subset and expect rankings to generalise, at least within the web
-search / open-domain QA domain. Domain-specific applications (legal, medical) should be
-tested independently.
+**Recommendation 5: IR and RAGAS findings from one dataset are likely to transfer; LLM-judge
+findings are not.** Cross-dataset stability is high for IR (ρ = 0.944) and RAGAS (ρ = 0.951),
+so practitioners using these frameworks can run evaluation on a representative subset and
+expect rankings to generalise, at least within the web search / open-domain QA domain.
+Calibrated ARES rankings did not transfer (ρ = −0.189), so LLM-judge rankings should be
+re-established on each new dataset rather than assumed to carry over. Domain-specific
+applications (legal, medical) should be tested independently in all cases.
 
-**Chapter Summary:** This chapter has interpreted the empirical results in light of the three sub-questions and the existing literature. The asymmetry between IR–ARES and IR–RAGAS agreement was explained through construct differences and methodological divergence between the two LLM-judge frameworks. The dominance of retrieval method over chunking was attributed to BM25's lexical limitations and the compensatory effect of cross-encoder reranking. Cross-dataset stability was contextualised against Thakur et al.'s (2021) pessimistic framing, with the finding that relative rankings transfer even when absolute scores do not. Five evidence-grounded recommendations for framework selection and pipeline design were derived. Chapter 8 provides the concluding summary, limitations, and future work directions.
+**Chapter Summary:** This chapter has interpreted the empirical results in light of the three sub-questions and the existing literature. The central finding is that PPI calibration reverses the apparent IR–ARES agreement (ρ = 0.951 → −0.490 on MS MARCO), which was shown to be an artefact of the uncalibrated judge's leniency: calibration compresses ARES scores into a narrow band, leaving a noise-dominated ranking that neither correlates with IR/RAGAS nor replicates across datasets. IR and RAGAS, by contrast, agree moderately and transfer stably across datasets. The dominance of retrieval method over chunking was attributed to BM25's lexical limitations and the compensatory effect of cross-encoder reranking. Five evidence-grounded recommendations were derived, foremost among them a caution against treating uncalibrated LLM-judge scores as a proxy for retrieval quality. Chapter 8 provides the concluding summary, limitations, and future work directions.
 
 ---
 
@@ -834,20 +889,22 @@ ARES implementation using zero-shot GPT-4o-mini judges.
 
 ### 8.2 Key Findings
 
-**SQ1 — Framework agreement on MS MARCO:** The three frameworks show substantially different
-degrees of agreement. IR metrics and ARES composite agree strongly (Spearman ρ = 0.951,
-95% CI [0.771, 1.000]). IR metrics and RAGAS faithfulness agree only moderately (ρ = 0.587,
-95% CI [–0.029, 0.915]). RAGAS and ARES occupy an intermediate position (ρ = 0.727). The
-implication is that the choice of evaluation framework materially affects the ranking produced:
-a practitioner using RAGAS alone could reach different configuration recommendations than one
-using IR metrics or ARES.
+**SQ1 — Framework agreement on MS MARCO:** With ARES PPI-calibrated against 200 human labels,
+IR metrics and RAGAS faithfulness form the strongest positive pairing (Spearman ρ = 0.587,
+95% CI [–0.029, 0.915]), while calibrated ARES correlates *negatively* with IR (ρ = −0.490,
+95% CI [−0.885, 0.097]) and only weakly with RAGAS (ρ = 0.266). Critically, the uncalibrated
+raw ARES had agreed with IR very strongly (ρ = 0.951) on the identical data: calibration
+reversed the relationship. The implication is twofold — framework choice materially affects
+the ranking produced, and the apparent agreement of an uncalibrated LLM judge with IR metrics
+can be a calibration artefact rather than genuine signal.
 
-**SQ2 — Cross-dataset generalisation:** The agreement patterns observed on MS MARCO
-replicate on Natural Questions. All three frameworks show high cross-dataset ranking
-stability (IR: ρ = 0.944; RAGAS: ρ = 0.951; ARES: ρ = 0.851). The relative ordering
-of pairwise agreement is preserved: IR–ARES remains the strongest pairing; IR–RAGAS
-remains the weakest. This supports a cautiously positive answer to SQ2: for datasets of
-similar type (web search / open-domain QA), configuration rankings are stable across datasets.
+**SQ2 — Cross-dataset generalisation:** The answer is split by framework family. IR and RAGAS
+show high cross-dataset ranking stability (ρ = 0.944 and 0.951 respectively), so their
+configuration rankings transfer robustly from MS MARCO to NQ. Calibrated ARES shows no
+stability (ρ = −0.189, 95% CI [−0.715, 0.404] spanning zero): its ranking does not transfer.
+The negative IR–ARES relationship itself replicates and strengthens on NQ (ρ = −0.641, CI
+excluding zero). For datasets of similar type (web search / open-domain QA), IR and RAGAS
+rankings are stable, whereas the calibrated LLM judge does not yield a transferable ranking.
 
 **SQ3 — Variable attribution:** Retrieval method is the dominant design variable
 (|r| = 0.972 for BM25 vs hybrid on MS MARCO; all comparisons Holm–Bonferroni significant
@@ -857,22 +914,28 @@ expectations, fixed chunking outperforms semantic chunking on both datasets.
 
 ### 8.3 Limitations
 
-Three limitations deserve explicit acknowledgement. First, PPI calibration for ARES scores
-was not applied, as the 200 human-labelled examples per dataset required for calibration
-were not available at the time of submission. Raw ARES scores were used; calibrated scores
-may produce different agreement values. Second, the use of gpt-4o-mini as both generator
-and judge introduces self-preference bias: LLM judges favour stylistically familiar outputs,
-potentially inflating RAGAS and ARES scores for gpt-4o-mini-generated answers. Third, the
-pooled 50,000-document corpus reduces retrieval difficulty relative to the full MS MARCO
-or NQ index, and absolute retrieval scores should not be compared to full-index benchmarks.
-Full treatments of all threats to validity are provided in Section 5.8.
+Three limitations deserve explicit acknowledgement. First, the ARES PPI calibration relies on
+200 author-annotated human labels per dataset. As a single-annotator label set, it carries
+no inter-annotator agreement estimate; a second rater double-labelling a subset (Cohen's
+kappa) would strengthen confidence in the calibration, and the compressed calibrated ARES
+range means the labels' influence on the final scores is non-trivial. Second, the use of
+gpt-4o-mini as both generator and judge introduces self-preference bias: LLM judges favour
+stylistically familiar outputs, potentially inflating RAGAS and ARES scores for
+gpt-4o-mini-generated answers. Third, the pooled 50,000-document corpus reduces retrieval
+difficulty relative to the full MS MARCO or NQ index, and absolute retrieval scores should
+not be compared to full-index benchmarks. A fourth, statistical, limitation is that at
+n=12 configurations the correlation confidence intervals are wide and several span zero;
+the agreement results are therefore reported as exploratory. Full treatments of all threats
+to validity are provided in Section 5.8.
 
 ### 8.4 Future Work
 
 Several directions follow naturally from the limitations above:
 
-- **Human calibration.** Applying ARES PPI calibration with ~200 human labels per dataset
-  would provide corrected agreement estimates with formal confidence intervals.
+- **Multi-annotator calibration.** The ARES PPI calibration here uses a single annotator.
+  Recruiting additional annotators, reporting Cohen's kappa, and expanding the label set
+  beyond 200 per dataset would sharpen the calibrated ARES estimates and test whether the
+  score-compression effect is robust to label noise.
 
 - **Full-index evaluation.** Repeating the experiment against the full MS MARCO corpus
   (~8.8M passages) would test whether the relative configuration rankings observed under
@@ -895,13 +958,16 @@ Several directions follow naturally from the limitations above:
 
 This dissertation makes three contributions to the field:
 
-1. **Empirical evidence on inter-framework agreement.** It provides the first systematic
-   quantification of Spearman rank correlation between IR metrics, RAGAS, and ARES on
-   a common experimental ground, with bootstrap confidence intervals.
+1. **Empirical evidence that judge calibration changes conclusions.** It provides the first
+   systematic quantification of Spearman rank correlation between IR metrics, RAGAS, and ARES
+   on a common experimental ground, with bootstrap confidence intervals, and shows that PPI
+   calibration reverses the headline IR–ARES agreement (ρ = 0.951 → −0.490). This is direct
+   evidence that uncalibrated LLM-judge scores can agree spuriously with established metrics.
 
-2. **Cross-dataset validation.** It establishes that configuration rankings are highly
-   stable across MS MARCO and NQ for all three framework families — a reassurance for
-   practitioners who cannot afford to evaluate on multiple datasets.
+2. **Cross-dataset validation.** It establishes that IR and RAGAS configuration rankings are
+   highly stable across MS MARCO and NQ (ρ ≈ 0.94–0.95) — a reassurance for practitioners who
+   cannot afford to evaluate on multiple datasets — while showing that a calibrated zero-shot
+   LLM judge does not produce a transferable ranking (ρ = −0.189).
 
 3. **Actionable variable attribution.** It demonstrates, using paired Wilcoxon tests
    with large effect sizes, that retrieval method selection and reranking have
