@@ -15,3 +15,8 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+
+# internal planning / meeting-prep notes — not part of the public deliverable
+THESIS_PLAN.md
+docs/MEETING_PREP_2026-08-19.md
+docs/MEETING_PREP_2026-09-01.md
