@@ -2,7 +2,7 @@
 ## MSc Dissertation
 ### Programme: MSc Data Science and Artificial Intelligence
 ### Institution: Gisma University of Applied Sciences
-### Student: Dinesh | Supervisor: William Baker Morrison
+### Student: Dinesh (GH1040084) | Supervisor: William Morrison
 
 ---
 
@@ -12,11 +12,12 @@ I hereby declare that this dissertation is my own original work. It has not been
 
 All sources of information have been properly acknowledged through in-text citations and a full bibliography. All experimental design, implementation, data analysis, and written content are my own. Where external tools, libraries, and frameworks have been used, these are clearly attributed in the methodology and references.
 
-**Student Name:** Dinesh Deepanshu
+**Student Name:** Dinesh
+**Student Number:** GH1040084
 **Programme:** MSc Data Science and Artificial Intelligence
 **Institution:** Gisma University of Applied Sciences
-**Supervisor:** William Baker Morrison
-**Date:** August 2026
+**Supervisor:** William Morrison
+**Date:** 25 September 2026
 
 *Signature: ________________________*
 
@@ -26,7 +27,7 @@ All sources of information have been properly acknowledged through in-text citat
 
 This dissertation was completed independently, and I take full responsibility for every decision made within it — the experimental design, the code, the analysis, and the writing.
 
-I would like to express my sincere gratitude to my supervisor, William Baker Morrison, whose guidance shaped this research at every stage. His feedback was direct and constructive — he pushed me to think more rigorously about methodology, to be honest about limitations, and to write with greater clarity and precision. Our meetings gave this work a direction I could not have found on my own.
+I would like to express my sincere gratitude to my supervisor, William Morrison, whose guidance shaped this research at every stage. His feedback was direct and constructive — he pushed me to think more rigorously about methodology, to be honest about limitations, and to write with greater clarity and precision. Our meetings gave this work a direction I could not have found on my own.
 
 I am grateful to Gisma University of Applied Sciences for providing the academic environment and resources that made this programme possible. The MSc Data Science and Artificial Intelligence has given me both the technical foundation and the research mindset to pursue questions I genuinely care about.
 
