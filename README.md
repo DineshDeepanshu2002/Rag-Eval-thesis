@@ -22,11 +22,15 @@ with 200 human labels per dataset:
 | IR vs ARES agreement (NQ) | ρ = 0.865 | **ρ = −0.641** |
 | ARES cross-dataset stability | ρ = 0.851 | **ρ = −0.189** |
 
-The strong raw agreement was an artefact of the uncalibrated LLM judge's bias; once
-calibrated, ARES scores compress into a narrow band and no longer track IR metrics or
-transfer across datasets. IR and RAGAS, by contrast, agree moderately and stably
-(cross-dataset ρ ≈ 0.94–0.95). Retrieval method and reranking dominate performance;
-chunking has the smallest effect.
+The agreement between the LLM judge and IR metrics is highly sensitive to calibration.
+Because the calibration here was derived from a single reference configuration and applied
+as one global rectifier, the inversion is interpreted cautiously, as a limitation of the
+calibration design as much as a property of the judge: a single global correction compresses
+ARES scores into a narrow band, after which they no longer track IR metrics or transfer
+across datasets. The practical caution is that uncalibrated LLM-judge scores should not be
+treated as a proxy for retrieval quality without calibration across configurations. IR and
+RAGAS, by contrast, agree moderately and transfer stably (cross-dataset ρ ≈ 0.94–0.95).
+Retrieval method and reranking dominate performance; chunking has the smallest effect.
 
 ## Setup
 
